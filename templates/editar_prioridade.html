@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Editar Prioridade</h2>
+
+<form method="POST" action="/prioridades/editar/{{ prioridade['id'] }}">
+    <div>
+        <label>Nome:</label><br>
+        <input type="text" name="nome" value="{{ prioridade['nome'] }}" required>
+    </div>
+    <br>
+
+    <div>
+        <label>Cor:</label><br>
+        <input type="color" name="cor" value="{{ prioridade['cor'] }}" required>
+        <span class="cor-preview" data-color-preview="{{ prioridade['cor'] }}"></span>
+    </div>
+    <br>
+
+    <div>
+        <label>Ordem (menor = mais prioritária):</label><br>
+        <input type="number" name="nivel" min="1" value="{{ prioridade['nivel'] }}" required>
+    </div>
+    <br>
+
+    <button type="submit">Salvar</button>
+    <a href="/prioridades"><button type="button">Cancelar</button></a>
+</form>
+{% endblock %}

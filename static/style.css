@@ -1,0 +1,228 @@
+
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    padding: 0;
+    margin: 0;
+    min-height: 100vh;
+    padding-bottom: 70px;
+    box-sizing: border-box;
+}
+
+.header {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+}
+
+.header h1 {
+    margin: 0;
+    display: inline-block;
+}
+
+.menu {
+    float: right;
+    margin-top: 10px;
+}
+
+.menu a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+}
+
+.menu a:hover {
+    text-decoration: underline;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto 40px auto;
+    background: white;
+    padding: 30px;
+}
+
+.alert {
+    background-color: #ffc107;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+
+button[type="button"] {
+    background-color: #808080;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th {
+    text-align: left;
+    padding: 12px;
+}
+
+td {
+    padding: 12px;
+}
+
+table a {
+    text-decoration: none;
+}
+
+form div {
+    margin-bottom: 10px;
+}
+
+input[type="text"], textarea {
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+select,
+input[type="number"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+input[type="color"] {
+    width: 56px;
+    height: 36px;
+    padding: 2px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+}
+
+textarea {
+    resize: vertical;
+}
+
+.prioridade-tag {
+    color: #fff;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.prioridade-tag-prioridades {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 8px;
+}
+
+.cor-preview {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border: 1px solid #bbb;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+/* ── Barra de filtros ─────────────────────────────────── */
+.filtros-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+}
+
+.filtros-grupo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filtros-label {
+    font-size: 13px;
+    color: #666;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.filtro-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 2px solid #ccc;
+    background: #fff;
+    color: #444;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: bold;
+    transition: opacity 0.15s;
+}
+
+.filtro-btn:hover {
+    opacity: 0.75;
+    text-decoration: none;
+}
+
+.filtro-btn-ativo {
+    background-color: #333;
+    color: #fff !important;
+    border-color: #333 !important;
+}
+
+.filtro-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.filtro-select {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.filtros-contagem {
+    margin-left: auto;
+    font-size: 13px;
+    color: #555;
+    white-space: nowrap;
+}
+
+.filtro-limpar {
+    color: #dc3545;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.filtro-limpar:hover {
+    text-decoration: underline;
+}

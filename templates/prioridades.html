@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Gerenciar Prioridades</h2>
+
+<div style="border:1px solid #ccc; padding:15px; margin-bottom:20px;">
+    <h3>Nova Prioridade</h3>
+    <form method="POST" action="/prioridades/nova">
+        <div>
+            <label>Nome:</label><br>
+            <input type="text" name="nome" required>
+        </div>
+        <div>
+            <label>Cor:</label><br>
+            <input type="color" name="cor" value="#198754" required>
+        </div>
+        <div>
+            <label>Ordem (menor = mais prioritária):</label><br>
+            <input type="number" name="nivel" min="1" required>
+        </div>
+        <button type="submit">Criar Prioridade</button>
+    </form>
+</div>
+
+<table border="1" cellpadding="10" cellspacing="0" width="100%">
+    <thead>
+        <tr bgcolor="#cccccc">
+            <th>Nome</th>
+            <th>Cor</th>
+            <th>Ordem</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for prioridade in prioridades %}
+        <tr>
+            <td>{{ prioridade['nome'] }}</td>
+            <td>
+                <span class="prioridade-tag prioridade-tag-prioridades" data-priority-color="{{ prioridade['cor'] }}"></span>
+            </td>
+            <td>{{ prioridade['nivel'] }}</td>
+            <td>
+                <a href="/prioridades/editar/{{ prioridade['id'] }}">Editar</a>
+                |
+                <a href="/prioridades/excluir/{{ prioridade['id'] }}" style="color:red;">Excluir</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

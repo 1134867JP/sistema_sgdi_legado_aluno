@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Editar Demanda</h2>
+
+
+<form method="POST" action="/editar/{{ demanda['id'] }}">
+    <div>
+        <label>Título:</label><br>
+        <input type="text" name="titulo" value="{{ demanda['titulo'] }}" size="50" required>
+    </div>
+    <br>
+
+    <div>
+        <label>Prioridade:</label><br>
+        <select name="prioridade_id" required>
+            <option value="">Selecione</option>
+            {% for prioridade in prioridades %}
+            <option value="{{ prioridade['id'] }}" {% if prioridade['id'] == demanda['prioridade_id'] %}selected{% endif %}>
+                Nível {{ prioridade['nivel'] }} - {{ prioridade['nome'] }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <br>
+    
+    <div>
+        <label>Descrição:</label><br>
+        <textarea name="descricao" rows="5" cols="50">{{ demanda['descricao'] }}</textarea>
+    </div>
+    <br>
+    
+    <div>
+        <label>Solicitante:</label><br>
+        <input type="text" name="solicitante" value="{{ demanda['solicitante'] }}">
+    </div>
+    <br>
+    
+    <div>
+        <label>Data de Criação:</label><br>
+        <input type="text" value="{{ demanda['data_criacao'] }}" disabled>
+    </div>
+    <br>
+    
+    <button type="submit">Atualizar</button>
+    <a href="/"><button type="button">Cancelar</button></a>
+</form>
+
+{% endblock %}
