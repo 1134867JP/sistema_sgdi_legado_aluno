@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 from datetime import datetime
+from unidecode import unidecode
 
 app = Flask(__name__)
 app.secret_key = '123456'
@@ -10,6 +11,7 @@ DATABASE = 'demandas.db'
 def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
+    conn.create_function("UNACCENT", 1, lambda x: unidecode(x) if x else "")
     return conn
 
 
@@ -334,18 +336,24 @@ def deletar(id):
 
 @app.route('/buscar')
 def buscar():
-    termo = request.args.get('q', '').strip()
+    termo = request.args.get('q', '').strip().lower()
+    termo = f"%{termo}%"
+
     conn = get_db()
+
     resultados = conn.execute(
         '''
         SELECT d.*, p.nome AS prioridade_nome, p.cor AS prioridade_cor, p.nivel AS prioridade_nivel
         FROM demandas d
         JOIN prioridades p ON p.id = d.prioridade_id
-        WHERE d.titulo LIKE ?
+        WHERE 
+            UNACCENT(lower(d.titulo)) LIKE UNACCENT(lower(?))
+            OR UNACCENT(lower(p.nome)) LIKE UNACCENT(lower(?))
         ORDER BY p.nivel ASC, d.data_criacao DESC
         ''',
-        (f'%{termo}%',),
+        (termo, termo),
     ).fetchall()
+
     conn.close()
     return render_template('index.html', demandas=resultados)
 
