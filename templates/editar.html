@@ -3,7 +3,6 @@
 {% block content %}
 <h2>Editar Demanda</h2>
 
-
 <form method="POST" action="/editar/{{ demanda['id'] }}">
     <div>
         <label>Título:</label><br>
@@ -23,25 +22,29 @@
         </select>
     </div>
     <br>
-    
+
     <div>
         <label>Descrição:</label><br>
         <textarea name="descricao" rows="5" cols="50">{{ demanda['descricao'] }}</textarea>
     </div>
     <br>
-    
+
     <div>
         <label>Solicitante:</label><br>
+        {% if is_admin %}
         <input type="text" name="solicitante" value="{{ demanda['solicitante'] }}">
+        {% else %}
+        <input type="text" value="{{ demanda['solicitante'] }}" disabled>
+        {% endif %}
     </div>
     <br>
-    
+
     <div>
         <label>Data de Criação:</label><br>
         <input type="text" value="{{ demanda['data_criacao'] }}" disabled>
     </div>
     <br>
-    
+
     <button type="submit">Atualizar</button>
     <a href="/"><button type="button">Cancelar</button></a>
 </form>

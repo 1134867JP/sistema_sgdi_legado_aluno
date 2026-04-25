@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Usuários</h2>
+
+<a href="/usuarios/novo"><button>+ Novo Usuário</button></a>
+<br><br>
+
+<table border="1" cellpadding="10" cellspacing="0" width="100%">
+    <thead>
+        <tr bgcolor="#cccccc">
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Tipo</th>
+            <th>Data de Cadastro</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for usuario in usuarios %}
+        <tr>
+            <td>{{ usuario['id'] }}</td>
+            <td>{{ usuario['nome'] }}</td>
+            <td>{{ usuario['email'] }}</td>
+            <td>{{ usuario['tipo'] | capitalize }}</td>
+            <td>{{ usuario['data_criacao'] }}</td>
+        </tr>
+        {% endfor %}
+        {% if usuarios | length == 0 %}
+        <tr>
+            <td colspan="5" style="text-align:center; color:#999; padding: 30px;">
+                Nenhum usuário cadastrado.
+            </td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+{% endblock %}

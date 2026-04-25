@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 import sqlite3
 from datetime import datetime
 from unidecode import unidecode
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = '123456'
@@ -13,6 +15,29 @@ def get_db():
     conn.row_factory = sqlite3.Row
     conn.create_function("UNACCENT", 1, lambda x: unidecode(x) if x else "")
     return conn
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'usuario_id' not in session:
+            flash('Faça login para continuar.')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'usuario_id' not in session:
+            flash('Faça login para continuar.')
+            return redirect(url_for('login'))
+        if session.get('usuario_tipo') != 'admin':
+            flash('Acesso restrito a administradores.')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated
 
 
 def get_prioridade_baixa_id(cursor):
@@ -82,7 +107,9 @@ def ensure_database():
                 solicitante TEXT,
                 data_criacao TEXT NOT NULL,
                 prioridade_id INTEGER NOT NULL,
-                FOREIGN KEY (prioridade_id) REFERENCES prioridades(id)
+                usuario_id INTEGER,
+                FOREIGN KEY (prioridade_id) REFERENCES prioridades(id),
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
             '''
         )
@@ -102,7 +129,9 @@ def ensure_database():
                     solicitante TEXT,
                     data_criacao TEXT NOT NULL,
                     prioridade_id INTEGER NOT NULL,
-                    FOREIGN KEY (prioridade_id) REFERENCES prioridades(id)
+                    usuario_id INTEGER,
+                    FOREIGN KEY (prioridade_id) REFERENCES prioridades(id),
+                    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
                 )
                 '''
             )
@@ -130,9 +159,13 @@ def ensure_database():
                 '''
             )
             cursor.execute('DROP TABLE demandas_antiga')
-        elif 'prioridade_id' not in mapa_colunas:
-            cursor.execute(f'ALTER TABLE demandas ADD COLUMN prioridade_id INTEGER DEFAULT {baixa_id}')
-            cursor.execute('UPDATE demandas SET prioridade_id = ? WHERE prioridade_id IS NULL', (baixa_id,))
+        else:
+            if 'prioridade_id' not in mapa_colunas:
+                cursor.execute(f'ALTER TABLE demandas ADD COLUMN prioridade_id INTEGER DEFAULT {baixa_id}')
+                cursor.execute('UPDATE demandas SET prioridade_id = ? WHERE prioridade_id IS NULL', (baixa_id,))
+
+            if 'usuario_id' not in mapa_colunas:
+                cursor.execute('ALTER TABLE demandas ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id)')
 
     comentarios_table = cursor.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='comentarios'"
@@ -185,6 +218,34 @@ def ensure_database():
             )
             cursor.execute('DROP TABLE comentarios_antigos')
 
+    cursor.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            senha_hash TEXT NOT NULL,
+            tipo TEXT NOT NULL DEFAULT 'solicitante',
+            data_criacao TEXT NOT NULL
+        )
+        '''
+    )
+
+    admin_exists = cursor.execute(
+        "SELECT COUNT(*) FROM usuarios WHERE email = 'admin@admin.com'"
+    ).fetchone()[0]
+    if not admin_exists:
+        cursor.execute(
+            'INSERT INTO usuarios (nome, email, senha_hash, tipo, data_criacao) VALUES (?, ?, ?, ?, ?)',
+            (
+                'Administrador',
+                'admin@admin.com',
+                generate_password_hash('admin123'),
+                'admin',
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            ),
+        )
+
     cursor.execute('PRAGMA foreign_keys = ON')
     conn.commit()
     conn.close()
@@ -194,7 +255,40 @@ def carregar_prioridades(conn):
     return conn.execute('SELECT * FROM prioridades ORDER BY nivel ASC, data_criacao ASC').fetchall()
 
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'usuario_id' in session:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        senha = request.form.get('senha', '')
+
+        conn = get_db()
+        usuario = conn.execute(
+            'SELECT * FROM usuarios WHERE email = ?', (email,)
+        ).fetchone()
+        conn.close()
+
+        if usuario and check_password_hash(usuario['senha_hash'], senha):
+            session['usuario_id'] = usuario['id']
+            session['usuario_nome'] = usuario['nome']
+            session['usuario_tipo'] = usuario['tipo']
+            return redirect(url_for('index'))
+
+        flash('Email ou senha inválidos.')
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
 @app.route('/')
+@login_required
 def index():
     conn = get_db()
     prioridades = carregar_prioridades(conn)
@@ -211,26 +305,32 @@ def index():
     }
     order_clause = ordens_validas.get(ordem, 'p.nivel ASC, d.data_criacao ASC')
 
+    is_admin = session.get('usuario_tipo') == 'admin'
+    usuario_id = session.get('usuario_id')
+
+    conditions = []
+    params = []
+
+    if not is_admin:
+        conditions.append('d.usuario_id = ?')
+        params.append(usuario_id)
+
     if prioridade_id:
-        demandas = conn.execute(
-            '''
-            SELECT d.*, p.nome AS prioridade_nome, p.cor AS prioridade_cor, p.nivel AS prioridade_nivel
-            FROM demandas d
-            JOIN prioridades p ON p.id = d.prioridade_id
-            WHERE d.prioridade_id = ?
-            ORDER BY {}
-            '''.format(order_clause),
-            (prioridade_id,),
-        ).fetchall()
-    else:
-        demandas = conn.execute(
-            '''
-            SELECT d.*, p.nome AS prioridade_nome, p.cor AS prioridade_cor, p.nivel AS prioridade_nivel
-            FROM demandas d
-            JOIN prioridades p ON p.id = d.prioridade_id
-            ORDER BY {}
-            '''.format(order_clause),
-        ).fetchall()
+        conditions.append('d.prioridade_id = ?')
+        params.append(prioridade_id)
+
+    where_clause = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
+
+    demandas = conn.execute(
+        f'''
+        SELECT d.*, p.nome AS prioridade_nome, p.cor AS prioridade_cor, p.nivel AS prioridade_nivel
+        FROM demandas d
+        JOIN prioridades p ON p.id = d.prioridade_id
+        {where_clause}
+        ORDER BY {order_clause}
+        ''',
+        params,
+    ).fetchall()
 
     conn.close()
     return render_template(
@@ -243,32 +343,40 @@ def index():
 
 
 @app.route('/nova_demanda', methods=['GET', 'POST'])
+@login_required
 def nova_demanda():
     conn = get_db()
     prioridades = carregar_prioridades(conn)
+    is_admin = session.get('usuario_tipo') == 'admin'
 
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
         descricao = request.form.get('descricao', '').strip()
-        solicitante = request.form.get('solicitante', '').strip()
         prioridade_id = request.form.get('prioridade_id', '').strip()
+
+        if is_admin:
+            solicitante = request.form.get('solicitante', '').strip()
+            usuario_id_demanda = None
+        else:
+            solicitante = session.get('usuario_nome', '')
+            usuario_id_demanda = session.get('usuario_id')
 
         if not titulo:
             flash('Título é obrigatório.')
             conn.close()
-            return render_template('nova_demanda.html', prioridades=prioridades)
+            return render_template('nova_demanda.html', prioridades=prioridades, is_admin=is_admin)
 
         if not prioridade_id:
             flash('Prioridade é obrigatória.')
             conn.close()
-            return render_template('nova_demanda.html', prioridades=prioridades)
+            return render_template('nova_demanda.html', prioridades=prioridades, is_admin=is_admin)
 
         conn.execute(
             '''
-            INSERT INTO demandas (titulo, descricao, solicitante, data_criacao, prioridade_id)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO demandas (titulo, descricao, solicitante, data_criacao, prioridade_id, usuario_id)
+            VALUES (?, ?, ?, ?, ?, ?)
             ''',
-            (titulo, descricao, solicitante, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), prioridade_id),
+            (titulo, descricao, solicitante, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), prioridade_id, usuario_id_demanda),
         )
         conn.commit()
         conn.close()
@@ -277,10 +385,11 @@ def nova_demanda():
         return redirect(url_for('index'))
 
     conn.close()
-    return render_template('nova_demanda.html', prioridades=prioridades)
+    return render_template('nova_demanda.html', prioridades=prioridades, is_admin=is_admin)
 
 
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
 def editar(id):
     conn = get_db()
     demanda = conn.execute('SELECT * FROM demandas WHERE id = ?', (id,)).fetchone()
@@ -289,23 +398,30 @@ def editar(id):
         flash('Demanda não encontrada.')
         return redirect(url_for('index'))
 
+    is_admin = session.get('usuario_tipo') == 'admin'
+
+    if not is_admin and demanda['usuario_id'] != session.get('usuario_id'):
+        conn.close()
+        flash('Sem permissão para editar esta demanda.')
+        return redirect(url_for('index'))
+
     prioridades = carregar_prioridades(conn)
 
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
         descricao = request.form.get('descricao', '').strip()
-        solicitante = request.form.get('solicitante', '').strip()
         prioridade_id = request.form.get('prioridade_id', '').strip()
+        solicitante = request.form.get('solicitante', '').strip() if is_admin else demanda['solicitante']
 
         if not titulo:
             flash('Título é obrigatório.')
             conn.close()
-            return render_template('editar.html', demanda=demanda, prioridades=prioridades)
+            return render_template('editar.html', demanda=demanda, prioridades=prioridades, is_admin=is_admin)
 
         if not prioridade_id:
             flash('Prioridade é obrigatória.')
             conn.close()
-            return render_template('editar.html', demanda=demanda, prioridades=prioridades)
+            return render_template('editar.html', demanda=demanda, prioridades=prioridades, is_admin=is_admin)
 
         conn.execute(
             '''
@@ -321,10 +437,11 @@ def editar(id):
         return redirect(url_for('index'))
 
     conn.close()
-    return render_template('editar.html', demanda=demanda, prioridades=prioridades)
+    return render_template('editar.html', demanda=demanda, prioridades=prioridades, is_admin=is_admin)
 
 
 @app.route('/deletar/<int:id>')
+@admin_required
 def deletar(id):
     conn = get_db()
     conn.execute('DELETE FROM demandas WHERE id = ?', (id,))
@@ -335,30 +452,52 @@ def deletar(id):
 
 
 @app.route('/buscar')
+@login_required
 def buscar():
-    termo = request.args.get('q', '').strip().lower()
-    termo = f"%{termo}%"
+    termo = request.args.get('q', '').strip()
+    termo_like = f"%{termo}%"
 
     conn = get_db()
+    prioridades = carregar_prioridades(conn)
+    is_admin = session.get('usuario_tipo') == 'admin'
+    usuario_id = session.get('usuario_id')
 
-    resultados = conn.execute(
-        '''
-        SELECT d.*, p.nome AS prioridade_nome, p.cor AS prioridade_cor, p.nivel AS prioridade_nivel
-        FROM demandas d
-        JOIN prioridades p ON p.id = d.prioridade_id
-        WHERE 
-            UNACCENT(lower(d.titulo)) LIKE UNACCENT(lower(?))
-            OR UNACCENT(lower(p.nome)) LIKE UNACCENT(lower(?))
-        ORDER BY p.nivel ASC, d.data_criacao DESC
-        ''',
-        (termo, termo),
-    ).fetchall()
+    if is_admin:
+        resultados = conn.execute(
+            '''
+            SELECT d.*, p.nome AS prioridade_nome, p.cor AS prioridade_cor, p.nivel AS prioridade_nivel
+            FROM demandas d
+            JOIN prioridades p ON p.id = d.prioridade_id
+            WHERE
+                UNACCENT(lower(d.titulo)) LIKE UNACCENT(lower(?))
+                OR UNACCENT(lower(p.nome)) LIKE UNACCENT(lower(?))
+            ORDER BY p.nivel ASC, d.data_criacao DESC
+            ''',
+            (termo_like, termo_like),
+        ).fetchall()
+    else:
+        resultados = conn.execute(
+            '''
+            SELECT d.*, p.nome AS prioridade_nome, p.cor AS prioridade_cor, p.nivel AS prioridade_nivel
+            FROM demandas d
+            JOIN prioridades p ON p.id = d.prioridade_id
+            WHERE
+                d.usuario_id = ?
+                AND (
+                    UNACCENT(lower(d.titulo)) LIKE UNACCENT(lower(?))
+                    OR UNACCENT(lower(p.nome)) LIKE UNACCENT(lower(?))
+                )
+            ORDER BY p.nivel ASC, d.data_criacao DESC
+            ''',
+            (usuario_id, termo_like, termo_like),
+        ).fetchall()
 
     conn.close()
-    return render_template('index.html', demandas=resultados)
+    return render_template('index.html', demandas=resultados, prioridades=prioridades, prioridade_filtro='', ordem='prioridade_maior')
 
 
 @app.route('/prioridades')
+@admin_required
 def prioridades():
     conn = get_db()
     lista = carregar_prioridades(conn)
@@ -367,6 +506,7 @@ def prioridades():
 
 
 @app.route('/prioridades/nova', methods=['POST'])
+@admin_required
 def nova_prioridade():
     nome = request.form.get('nome', '').strip()
     cor = request.form.get('cor', '').strip()
@@ -395,6 +535,7 @@ def nova_prioridade():
 
 
 @app.route('/prioridades/editar/<int:id>', methods=['GET', 'POST'])
+@admin_required
 def editar_prioridade(id):
     conn = get_db()
     prioridade = conn.execute('SELECT * FROM prioridades WHERE id = ?', (id,)).fetchone()
@@ -432,6 +573,7 @@ def editar_prioridade(id):
 
 
 @app.route('/prioridades/excluir/<int:id>')
+@admin_required
 def excluir_prioridade(id):
     conn = get_db()
     total = conn.execute('SELECT COUNT(*) FROM prioridades').fetchone()[0]
@@ -454,6 +596,7 @@ def excluir_prioridade(id):
 
 
 @app.route('/detalhes/<int:id>')
+@login_required
 def detalhes(id):
     conn = get_db()
     demanda = conn.execute(
@@ -471,23 +614,42 @@ def detalhes(id):
         flash('Demanda não encontrada.')
         return redirect(url_for('index'))
 
+    is_admin = session.get('usuario_tipo') == 'admin'
+
+    if not is_admin and demanda['usuario_id'] != session.get('usuario_id'):
+        conn.close()
+        flash('Sem permissão para ver esta demanda.')
+        return redirect(url_for('index'))
+
     comentarios = conn.execute(
         'SELECT * FROM comentarios WHERE demanda_id = ? ORDER BY data DESC',
         (id,),
     ).fetchall()
     conn.close()
 
-    return render_template('detalhes.html', demanda=demanda, comentarios=comentarios)
+    return render_template('detalhes.html', demanda=demanda, comentarios=comentarios, is_admin=is_admin)
 
 
 @app.route('/adicionar_comentario/<int:demanda_id>', methods=['POST'])
+@login_required
 def adicionar_comentario(demanda_id):
     comentario = request.form.get('comentario', '').strip()
-    autor = request.form.get('autor', '').strip()
 
-    if not comentario or not autor:
-        flash('Autor e comentário são obrigatórios.')
+    if not comentario:
+        flash('Comentário é obrigatório.')
         return redirect(url_for('detalhes', id=demanda_id))
+
+    is_admin = session.get('usuario_tipo') == 'admin'
+
+    if not is_admin:
+        conn = get_db()
+        demanda = conn.execute('SELECT usuario_id FROM demandas WHERE id = ?', (demanda_id,)).fetchone()
+        conn.close()
+        if not demanda or demanda['usuario_id'] != session.get('usuario_id'):
+            flash('Sem permissão para comentar nesta demanda.')
+            return redirect(url_for('index'))
+
+    autor = session.get('usuario_nome', '')
 
     conn = get_db()
     conn.execute(
@@ -498,6 +660,52 @@ def adicionar_comentario(demanda_id):
     conn.close()
 
     return redirect(url_for('detalhes', id=demanda_id))
+
+
+@app.route('/usuarios')
+@admin_required
+def usuarios():
+    conn = get_db()
+    lista = conn.execute(
+        'SELECT id, nome, email, tipo, data_criacao FROM usuarios ORDER BY nome'
+    ).fetchall()
+    conn.close()
+    return render_template('usuarios.html', usuarios=lista)
+
+
+@app.route('/usuarios/novo', methods=['GET', 'POST'])
+@admin_required
+def novo_usuario():
+    if request.method == 'POST':
+        nome = request.form.get('nome', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        senha = request.form.get('senha', '')
+
+        if not nome or not email or not senha:
+            flash('Nome, email e senha são obrigatórios.')
+            return render_template('novo_usuario.html')
+
+        conn = get_db()
+        try:
+            conn.execute(
+                'INSERT INTO usuarios (nome, email, senha_hash, tipo, data_criacao) VALUES (?, ?, ?, ?, ?)',
+                (
+                    nome,
+                    email,
+                    generate_password_hash(senha),
+                    'solicitante',
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                ),
+            )
+            conn.commit()
+            flash('Usuário criado com sucesso!')
+            return redirect(url_for('usuarios'))
+        except sqlite3.IntegrityError:
+            flash('Este email já está cadastrado.')
+        finally:
+            conn.close()
+
+    return render_template('novo_usuario.html')
 
 
 def calcular_prazo(data_inicio):

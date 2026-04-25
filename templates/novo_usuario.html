@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Novo Usuário</h2>
+
+<form method="POST" action="/usuarios/novo">
+    <div>
+        <label>Nome:</label><br>
+        <input type="text" name="nome" size="40" required>
+    </div>
+    <br>
+    <div>
+        <label>Email:</label><br>
+        <input type="email" name="email" size="40" required>
+    </div>
+    <br>
+    <div>
+        <label>Senha:</label><br>
+        <input type="password" name="senha" size="40" required>
+    </div>
+    <br>
+    <button type="submit">Criar Usuário</button>
+    <a href="/usuarios"><button type="button">Cancelar</button></a>
+</form>
+
+{% endblock %}

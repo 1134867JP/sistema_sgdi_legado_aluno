@@ -72,10 +72,12 @@
             <td>{{ demanda['data_criacao'] }}</td>
             <td>
                 <a href="/detalhes/{{ demanda['id'] }}">Ver</a>
-                |
-                <a href="/editar/{{ demanda['id'] }}">Editar</a>
-                |
-                <a href="/deletar/{{ demanda['id'] }}" style="color:red;">Deletar</a>
+                {% if session.get('usuario_tipo') == 'admin' or demanda['usuario_id'] == session.get('usuario_id') %}
+                | <a href="/editar/{{ demanda['id'] }}">Editar</a>
+                {% endif %}
+                {% if session.get('usuario_tipo') == 'admin' %}
+                | <a href="/deletar/{{ demanda['id'] }}" style="color:red;">Deletar</a>
+                {% endif %}
             </td>
         </tr>
         {% endfor %}

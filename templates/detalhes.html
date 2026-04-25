@@ -13,13 +13,15 @@
     </p>
     <p><strong>Descrição:</strong></p>
     <p>{{ demanda['descricao'] }}</p>
-    
+
     <p><strong>Solicitante:</strong> {{ demanda['solicitante'] }}</p>
     <p><strong>Data de Criação:</strong> {{ demanda['data_criacao'] }}</p>
-    
+
     <br>
+    {% if is_admin or demanda['usuario_id'] == session.get('usuario_id') %}
     <a href="/editar/{{ demanda['id'] }}"><button>Editar</button></a>
-    <a href="/"><button>Voltar</button></a>
+    {% endif %}
+    <a href="/"><button type="button">Voltar</button></a>
 </div>
 
 <h3>Comentários</h3>
@@ -33,11 +35,6 @@
 
 <h4>Adicionar Comentário</h4>
 <form method="POST" action="/adicionar_comentario/{{ demanda['id'] }}">
-    <div>
-        <label>Seu nome:</label><br>
-        <input type="text" name="autor" size="30" required>
-    </div>
-    <br>
     <div>
         <label>Comentário:</label><br>
         <textarea name="comentario" rows="4" cols="50" required></textarea>

@@ -226,3 +226,43 @@ textarea {
 .filtro-limpar:hover {
     text-decoration: underline;
 }
+
+/* ── Login ───────────────────────────────────────────── */
+.login-container {
+    max-width: 380px;
+    margin: 80px auto;
+    background: white;
+    padding: 40px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.login-container h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.login-container form div {
+    margin-bottom: 14px;
+}
+
+.login-container label {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* ── Usuário logado no menu ──────────────────────────── */
+.usuario-info {
+    color: #ccc;
+    font-size: 13px;
+    margin-left: 20px;
+}
+
+.menu-logout {
+    color: #ff9999;
+    margin-left: 12px;
+}
+
+.menu-logout:hover {
+    color: #ff6666;
+}
