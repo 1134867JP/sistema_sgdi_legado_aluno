@@ -3,24 +3,135 @@
 <head>
     <title>SGDI - Sistema de Gestão de Demandas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
     <style>
-        body { margin: 0; }
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f6f9;
+        }
+
+        /* HEADER */
+        .header {
+            background: #1f2937;
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* MENU */
+        .menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu a {
+            color: #e5e7eb;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .menu a:hover {
+            color: #ffffff;
+        }
+
+        .menu-logout {
+            color: #f87171 !important;
+            font-weight: 500;
+        }
+
+        /* SEARCH */
+        .menu form {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 10px;
+        }
+
+        .menu input[type="text"] {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            font-size: 13px;
+        }
+
+        .menu button {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            background-color: #3b82f6;
+            color: white;
+            cursor: pointer;
+        }
+
+        .menu button:hover {
+            background-color: #2563eb;
+        }
+
+        /* USER INFO */
+        .usuario-info {
+            font-size: 13px;
+            color: #d1d5db;
+            margin-left: 10px;
+        }
+
+        /* ALERT */
+        .alert {
+            max-width: 900px;
+            margin: 15px auto;
+            padding: 12px 15px;
+            border-radius: 6px;
+            background-color: #d1fae5;
+            color: #065f46;
+            font-size: 14px;
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 12px;
+            color: #999;
+        }
     </style>
 </head>
+
 <body>
+
     <div class="header">
         <h1>SGDI</h1>
+
         <div class="menu">
             <a href="/">Início</a>
             <a href="/nova_demanda">Nova Demanda</a>
+
             {% if session.get('usuario_tipo') == 'admin' %}
             <a href="/prioridades">Prioridades</a>
             <a href="/usuarios">Usuários</a>
             {% endif %}
-            <form action="/buscar" method="GET" style="display:inline;">
+
+            <form action="/buscar" method="GET">
                 <input type="text" name="q" placeholder="Buscar">
                 <button type="submit">Buscar</button>
             </form>
+
             <span class="usuario-info">{{ session.get('usuario_nome', '') }}</span>
             <a href="/logout" class="menu-logout">Sair</a>
         </div>
@@ -63,5 +174,6 @@
             campoCor.addEventListener('input', atualizarPreview);
         });
     </script>
+
 </body>
 </html>

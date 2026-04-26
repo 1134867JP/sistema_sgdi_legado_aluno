@@ -1,97 +1,274 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Lista de Demandas</h2>
 
-<div class="filtros-bar">
-    <div class="filtros-grupo">
-        <span class="filtros-label">Prioridade:</span>
-        <a href="/?ordem={{ ordem }}"
-           class="filtro-btn{% if not prioridade_filtro %} filtro-btn-ativo{% endif %}">
-            Todas
-        </a>
-        {% for p in prioridades %}
-        <a href="/?prioridade_id={{ p['id'] }}&ordem={{ ordem }}"
-           class="filtro-btn{% if prioridade_filtro == p['id']|string %} filtro-btn-ativo{% endif %}"
-           style="{% if prioridade_filtro == p['id']|string %}background-color: {{ p['cor'] }}; border-color: {{ p['cor'] }}; color: #fff;{% else %}border-color: {{ p['cor'] }}; color: {{ p['cor'] }};{% endif %}">
-            <span class="filtro-dot" style="background-color: {{ p['cor'] }};"></span>
-            {{ p['nome'] }}
-        </a>
-        {% endfor %}
+<style>
+    .demanda-wrapper {
+        max-width: 1100px;
+        margin: 30px auto;
+    }
+
+    h2 {
+        margin-bottom: 20px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    /* FILTROS */
+    .filtros-bar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .filtros-grupo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .filtros-label {
+        font-weight: 500;
+        color: #555;
+    }
+
+    .filtro-btn {
+        padding: 5px 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 13px;
+        transition: 0.2s;
+    }
+
+    .filtro-btn:hover {
+        background: #f0f0f0;
+    }
+
+    .filtro-btn-ativo {
+        font-weight: 500;
+    }
+
+    .filtro-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    .filtro-select {
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    .filtro-limpar {
+        font-size: 12px;
+        color: #999;
+        text-decoration: none;
+    }
+
+    .filtro-limpar:hover {
+        text-decoration: underline;
+    }
+
+    /* TABELA MODERNA */
+    .demanda-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: #f8fafc;
+    }
+
+    th {
+        padding: 14px;
+        text-align: left;
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #666;
+        border-bottom: 2px solid #eee;
+    }
+
+    td {
+        padding: 14px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 14px;
+        color: #444;
+    }
+
+    tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    /* PRIORIDADE */
+    .prioridade-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    /* AÇÕES */
+    .acoes a {
+        text-decoration: none;
+        margin-right: 8px;
+        color: #007bff;
+        font-weight: 500;
+    }
+
+    .acoes a:hover {
+        text-decoration: underline;
+    }
+
+    .acoes a.deletar {
+        color: red;
+    }
+
+    /* BOTÃO */
+    .nova-demanda-btn {
+        margin-top: 20px;
+        display: inline-block;
+        padding: 10px 16px;
+        border-radius: 8px;
+        background: #007bff;
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        transition: 0.2s;
+    }
+
+    .nova-demanda-btn:hover {
+        background: #0056b3;
+        transform: translateY(-1px);
+    }
+
+    /* EMPTY */
+    .empty {
+        text-align: center;
+        color: #999;
+        padding: 30px;
+    }
+</style>
+
+<div class="demanda-wrapper">
+
+    <h2>Lista de Demandas</h2>
+
+    <div class="filtros-bar">
+
+        <div class="filtros-grupo">
+            <span class="filtros-label">Prioridade:</span>
+
+            <a href="/?ordem={{ ordem }}"
+               class="filtro-btn{% if not prioridade_filtro %} filtro-btn-ativo{% endif %}">
+                Todas
+            </a>
+
+            {% for p in prioridades %}
+            <a href="/?prioridade_id={{ p['id'] }}&ordem={{ ordem }}"
+               class="filtro-btn{% if prioridade_filtro == p['id']|string %} filtro-btn-ativo{% endif %}"
+               style="{% if prioridade_filtro == p['id']|string %}background-color: {{ p['cor'] }}; border-color: {{ p['cor'] }}; color: #fff;{% else %}border-color: {{ p['cor'] }}; color: {{ p['cor'] }};{% endif %}">
+                <span class="filtro-dot" style="background-color: {{ p['cor'] }};"></span>
+                {{ p['nome'] }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="filtros-grupo">
+            <span class="filtros-label">Ordenar:</span>
+
+            <form method="GET" action="/" style="display:inline;">
+                {% if prioridade_filtro %}
+                <input type="hidden" name="prioridade_id" value="{{ prioridade_filtro }}">
+                {% endif %}
+
+                <select name="ordem" class="filtro-select" onchange="this.form.submit()">
+                    <option value="prioridade_maior" {% if ordem == 'prioridade_maior' %}selected{% endif %}>Maior Prioridade</option>
+                    <option value="prioridade_menor" {% if ordem == 'prioridade_menor' %}selected{% endif %}>Menor Prioridade</option>
+                    <option value="data_desc" {% if ordem == 'data_desc' %}selected{% endif %}>Data ↓</option>
+                    <option value="data_asc" {% if ordem == 'data_asc' %}selected{% endif %}>Data ↑</option>
+                    <option value="titulo" {% if ordem == 'titulo' %}selected{% endif %}>Título</option>
+                </select>
+            </form>
+        </div>
+
+        <span class="filtros-contagem">
+            <strong>{{ demandas|length }}</strong> demanda(s)
+        </span>
+
     </div>
 
-    <div class="filtros-grupo">
-        <span class="filtros-label">Ordenar:</span>
-        <form method="GET" action="/" style="display:inline; margin:0;">
-            {% if prioridade_filtro %}
-            <input type="hidden" name="prioridade_id" value="{{ prioridade_filtro }}">
-            {% endif %}
-            <select name="ordem" class="filtro-select" onchange="this.form.submit()">
-                <option value="prioridade_maior" {% if ordem == 'prioridade_maior' %}selected{% endif %}>Maior Prioridade</option>
-                <option value="prioridade_menor" {% if ordem == 'prioridade_menor' %}selected{% endif %}>Menor Prioridade</option>
-                <option value="data_desc"        {% if ordem == 'data_desc'        %}selected{% endif %}>Data ↓ (mais recente)</option>
-                <option value="data_asc"         {% if ordem == 'data_asc'         %}selected{% endif %}>Data ↑ (mais antiga)</option>
-                <option value="titulo"           {% if ordem == 'titulo'           %}selected{% endif %}>Título (A-Z)</option>
-            </select>
-        </form>
+    <div class="demanda-card">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Prioridade</th>
+                    <th>Título</th>
+                    <th>Solicitante</th>
+                    <th>Data</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for demanda in demandas %}
+                <tr style="border-left: 4px solid {{ demanda['prioridade_cor'] }};">
+                    <td>{{ demanda['id'] }}</td>
+                    <td>
+                        <span class="prioridade-tag"
+                              data-priority-color="{{ demanda['prioridade_cor'] }}">
+                            {{ demanda['prioridade_nome'] }}
+                        </span>
+                    </td>
+                    <td>{{ demanda['titulo'] }}</td>
+                    <td>{{ demanda['solicitante'] }}</td>
+                    <td>{{ demanda['data_criacao'] }}</td>
+                    <td class="acoes">
+                        <a href="/detalhes/{{ demanda['id'] }}">Ver</a>
+
+                        {% if session.get('usuario_tipo') == 'admin' or demanda['usuario_id'] == session.get('usuario_id') %}
+                        <a href="/editar/{{ demanda['id'] }}">Editar</a>
+                        {% endif %}
+
+                        {% if session.get('usuario_tipo') == 'admin' %}
+                        <a href="/deletar/{{ demanda['id'] }}" class="deletar">Deletar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+
+                {% if demandas|length == 0 %}
+                <tr>
+                    <td colspan="6" class="empty">
+                        Nenhuma demanda encontrada.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
     </div>
 
-    <span class="filtros-contagem">
-        {% if prioridade_filtro %}
-            <strong>{{ demandas|length }}</strong> demanda(s) filtrada(s)
-            &nbsp;·&nbsp;
-            <a href="/?ordem={{ ordem }}" class="filtro-limpar">✕ Limpar filtro</a>
-        {% else %}
-            <strong>{{ demandas|length }}</strong> demanda(s) no total
-        {% endif %}
-    </span>
+    <a href="/nova_demanda" class="nova-demanda-btn">
+        + Nova Demanda
+    </a>
+
 </div>
-
-<table border="1" cellpadding="10" cellspacing="0" width="100%">
-    <thead>
-        <tr bgcolor="#cccccc">
-            <th>ID</th>
-            <th>Prioridade</th>
-            <th>Título</th>
-            <th>Solicitante</th>
-            <th>Data</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for demanda in demandas %}
-        <tr style="border-left: 4px solid {{ demanda['prioridade_cor'] }};">
-            <td>{{ demanda['id'] }}</td>
-            <td>
-                <span class="prioridade-tag" data-priority-color="{{ demanda['prioridade_cor'] }}">
-                    {{ demanda['prioridade_nome'] }}
-                </span>
-            </td>
-            <td>{{ demanda['titulo'] }}</td>
-            <td>{{ demanda['solicitante'] }}</td>
-            <td>{{ demanda['data_criacao'] }}</td>
-            <td>
-                <a href="/detalhes/{{ demanda['id'] }}">Ver</a>
-                {% if session.get('usuario_tipo') == 'admin' or demanda['usuario_id'] == session.get('usuario_id') %}
-                | <a href="/editar/{{ demanda['id'] }}">Editar</a>
-                {% endif %}
-                {% if session.get('usuario_tipo') == 'admin' %}
-                | <a href="/deletar/{{ demanda['id'] }}" style="color:red;">Deletar</a>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-        {% if demandas|length == 0 %}
-        <tr>
-            <td colspan="6" style="text-align:center; color:#999; padding: 30px;">
-                Nenhuma demanda encontrada para este filtro.
-            </td>
-        </tr>
-        {% endif %}
-    </tbody>
-</table>
-
-<br><br>
-<a href="/nova_demanda"><button>+ Nova Demanda</button></a>
 
 {% endblock %}

@@ -1,46 +1,185 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Detalhes da Demanda #{{ demanda['id'] }}</h2>
 
-<div style="border:1px solid #ccc; padding:15px; margin-bottom:20px;">
-    <h3>{{ demanda['titulo'] }}</h3>
-    <p>
-        <strong>Prioridade:</strong>
-        <span class="prioridade-tag" data-priority-color="{{ demanda['prioridade_cor'] }}">
-            {{ demanda['prioridade_nome'] }} (Nível {{ demanda['prioridade_nivel'] }})
-        </span>
-    </p>
-    <p><strong>Descrição:</strong></p>
-    <p>{{ demanda['descricao'] }}</p>
+<style>
+    .demanda-form-wrapper {
+        max-width: 900px;
+        margin: 40px auto;
+    }
 
-    <p><strong>Solicitante:</strong> {{ demanda['solicitante'] }}</p>
-    <p><strong>Data de Criação:</strong> {{ demanda['data_criacao'] }}</p>
+    .demanda-card {
+        background: #ffffff;
+        padding: 25px 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
 
-    <br>
-    {% if is_admin or demanda['usuario_id'] == session.get('usuario_id') %}
-    <a href="/editar/{{ demanda['id'] }}"><button>Editar</button></a>
-    {% endif %}
-    <a href="/"><button type="button">Voltar</button></a>
-</div>
+    .demanda-card h2 {
+        margin-bottom: 20px;
+        font-weight: 600;
+        color: #333;
+    }
 
-<h3>Comentários</h3>
+    .demanda-card h3 {
+        margin-bottom: 15px;
+        color: #222;
+    }
 
-{% for comentario in comentarios %}
-<div style="background:#f0f0f0; padding:10px; margin:10px 0;">
-    <p><strong>{{ comentario[3] }}</strong> em {{ comentario[4] }}</p>
-    <p>{{ comentario[2] }}</p>
-</div>
-{% endfor %}
+    .demanda-info p {
+        margin: 8px 0;
+        color: #444;
+        font-size: 14px;
+    }
 
-<h4>Adicionar Comentário</h4>
-<form method="POST" action="/adicionar_comentario/{{ demanda['id'] }}">
-    <div>
-        <label>Comentário:</label><br>
-        <textarea name="comentario" rows="4" cols="50" required></textarea>
+    .prioridade-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 5px;
+    }
+
+    .demanda-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .demanda-btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .demanda-btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .demanda-btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .demanda-btn-secondary {
+        background-color: #e0e0e0;
+        color: #333;
+    }
+
+    .demanda-btn-secondary:hover {
+        background-color: #c7c7c7;
+    }
+
+    /* COMENTÁRIOS */
+    .comentario {
+        background: #f9fafb;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #eee;
+    }
+
+    .comentario strong {
+        font-size: 13px;
+    }
+
+    .comentario p {
+        margin: 5px 0;
+        font-size: 14px;
+        color: #444;
+    }
+
+    /* FORM */
+    .demanda-form-group {
+        margin-bottom: 15px;
+    }
+
+    textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        resize: vertical;
+        font-size: 14px;
+    }
+
+    textarea:focus {
+        border-color: #007bff;
+        outline: none;
+    }
+</style>
+
+<div class="demanda-form-wrapper">
+
+    <!-- DETALHES -->
+    <div class="demanda-card">
+        <h2>Detalhes da Demanda #{{ demanda['id'] }}</h2>
+
+        <h3>{{ demanda['titulo'] }}</h3>
+
+        <div class="demanda-info">
+            <p>
+                <strong>Prioridade:</strong>
+                <span class="prioridade-tag"
+                      data-priority-color="{{ demanda['prioridade_cor'] }}">
+                    {{ demanda['prioridade_nome'] }} (Nível {{ demanda['prioridade_nivel'] }})
+                </span>
+            </p>
+
+            <p><strong>Descrição:</strong></p>
+            <p>{{ demanda['descricao'] }}</p>
+
+            <p><strong>Solicitante:</strong> {{ demanda['solicitante'] }}</p>
+            <p><strong>Data de Criação:</strong> {{ demanda['data_criacao'] }}</p>
+        </div>
+
+        <div class="demanda-actions">
+            {% if is_admin or demanda['usuario_id'] == session.get('usuario_id') %}
+            <a href="/editar/{{ demanda['id'] }}">
+                <button class="demanda-btn demanda-btn-primary">Editar</button>
+            </a>
+            {% endif %}
+
+            <a href="/">
+                <button type="button" class="demanda-btn demanda-btn-secondary">Voltar</button>
+            </a>
+        </div>
     </div>
-    <br>
-    <button type="submit">Enviar Comentário</button>
-</form>
+
+    <!-- COMENTÁRIOS -->
+    <div class="demanda-card">
+        <h3>Comentários</h3>
+
+        {% for comentario in comentarios %}
+        <div class="comentario">
+            <p><strong>{{ comentario[3] }}</strong> em {{ comentario[4] }}</p>
+            <p>{{ comentario[2] }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- NOVO COMENTÁRIO -->
+    <div class="demanda-card">
+        <h3>Adicionar Comentário</h3>
+
+        <form method="POST" action="/adicionar_comentario/{{ demanda['id'] }}">
+            <div class="demanda-form-group">
+                <label>Comentário</label>
+                <textarea name="comentario" rows="4" required></textarea>
+            </div>
+
+            <button type="submit" class="demanda-btn demanda-btn-primary">
+                Enviar Comentário
+            </button>
+        </form>
+    </div>
+
+</div>
 
 {% endblock %}
