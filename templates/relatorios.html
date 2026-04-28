@@ -154,13 +154,20 @@
 
     .calendar-toggle {
         border: none;
-        background: transparent;
+        background: transparent !important;
         cursor: pointer;
-        font-size: 22px;
-        line-height: 1;
-        padding: 0;
+        padding: 6px;
         color: #2563eb;
         flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+    }
+
+    .calendar-toggle:hover {
+        background-color: #eff6ff !important;
     }
 
     .calendar-popover {
@@ -325,7 +332,9 @@
                         data-max="{{ data_maxima }}"
                         maxlength="10"
                         required>
-                    <button type="button" class="calendar-toggle" data-open-calendar aria-label="Abrir calendário">📅</button>
+                    <button type="button" class="calendar-toggle" data-open-calendar aria-label="Abrir calendário">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </button>
                 </div>
                 <small class="relatorio-help">Digite no formato DD/MM/AAAA ou escolha no calendário.</small>
                 <div class="calendar-popover" data-calendar hidden>
@@ -365,7 +374,9 @@
                         data-max="{{ data_maxima }}"
                         maxlength="10"
                         required>
-                    <button type="button" class="calendar-toggle" data-open-calendar aria-label="Abrir calendário">📅</button>
+                    <button type="button" class="calendar-toggle" data-open-calendar aria-label="Abrir calendário">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </button>
                 </div>
                 <small class="relatorio-help">Digite no formato DD/MM/AAAA ou escolha no calendário.</small>
                 <div class="calendar-popover" data-calendar hidden>
@@ -403,7 +414,7 @@
             <strong>{{ demandas|length }} demanda(s) encontrada(s)</strong>
         </div>
 
-        {% if relatorio_pronto %}
+        {% if relatorio_pronto and demandas|length > 0 %}
         <div class="relatorio-acoes" style="margin-bottom: 16px;">
             <button type="button" class="relatorio-btn relatorio-btn-secondary" onclick="window.print()">
                 Gerar PDF
@@ -460,6 +471,13 @@
             return;
         }
 
+        [dataInicial, dataFinal].forEach(function(input) {
+            if (input.value && /^\d{4}-\d{2}-\d{2}$/.test(input.value)) {
+                const parts = input.value.split('-');
+                input.value = parts[2] + '/' + parts[1] + '/' + parts[0];
+            }
+        });
+
         const monthNames = [
             'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
             'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -468,7 +486,7 @@
         function parseDateString(value) {
             // Aceita DD/MM/AAAA ou AAAA-MM-DD para compatibilidade
             let match;
-            
+
             if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
                 // Formato DD/MM/AAAA
                 match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -515,7 +533,7 @@
 
                 return date;
             }
-            
+
             return null;
         }
 
@@ -523,7 +541,7 @@
             const year = String(date.getFullYear()).padStart(4, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
-            
+
             if (format === 'iso') {
                 // Para enviar ao backend em AAAA-MM-DD
                 return year + '-' + month + '-' + day;
@@ -534,16 +552,20 @@
         }
 
         function applyDateMask(input) {
-            input.addEventListener('input', function() {
+            input.addEventListener('input', function(e) {
+                if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') {
+                    return;
+                }
+
                 let value = input.value.replace(/\D/g, '');
-                
+
                 if (value.length >= 2) {
                     value = value.slice(0, 2) + '/' + value.slice(2);
                 }
                 if (value.length >= 5) {
                     value = value.slice(0, 5) + '/' + value.slice(5);
                 }
-                
+
                 input.value = value.slice(0, 10);
             });
         }
@@ -621,7 +643,7 @@
 
         [dataInicial, dataFinal].forEach(function (input) {
             applyDateMask(input);
-            
+
             input.addEventListener('input', function () {
                 validarPeriodo();
             });
@@ -642,7 +664,7 @@
                 // Converter datas para formato ISO para enviar ao backend
                 const dataInicialObj = parseDateString(dataInicial.value);
                 const dataFinalObj = parseDateString(dataFinal.value);
-                
+
                 if (dataInicialObj) {
                     dataInicial.value = formatDate(dataInicialObj, 'iso');
                 }
@@ -748,7 +770,7 @@
                 }
                 renderCalendar();
                 calendar.hidden = false;
-                
+
                 // Posicionar o calendário corretamente
                 const rect = input.getBoundingClientRect();
                 calendar.style.top = (rect.bottom + 10) + 'px';
@@ -801,7 +823,7 @@
                     closeCalendar();
                 }
             });
-            
+
             window.addEventListener('scroll', function() {
                 if (!calendar.hidden) {
                     const rect = input.getBoundingClientRect();

@@ -1,281 +1,297 @@
-{% extends "base.html" %}
-
-{% block content %}
+{% extends "base.html" %} {% block content %}
 
 <style>
-    .demanda-form-wrapper {
-        max-width: 700px;
-        margin: 40px auto;
-    }
+  .demanda-form-wrapper {
+    max-width: 700px;
+    margin: 40px auto;
+  }
 
-    .demanda-card {
-        background: #ffffff;
-        padding: 25px 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
+  .demanda-card {
+    background: #ffffff;
+    padding: 25px 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
 
-    .demanda-card h2 {
-        margin-bottom: 20px;
-        font-weight: 600;
-        color: #333;
-    }
+  .demanda-card h2 {
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: #333;
+  }
 
-    .demanda-form-group {
-        margin-bottom: 18px;
-    }
+  .demanda-form-group {
+    margin-bottom: 18px;
+  }
 
-    .demanda-card label {
-        display: block;
-        font-weight: 500;
-        margin-bottom: 6px;
-        color: #444;
-    }
+  .demanda-card label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #444;
+  }
 
-    .demanda-card input,
-    .demanda-card select,
-    .demanda-card textarea {
-        width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 14px;
-        transition: border 0.2s;
-    }
+  .demanda-card input,
+  .demanda-card select,
+  .demanda-card textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    transition: border 0.2s;
+  }
 
-    .demanda-card input:focus,
-    .demanda-card select:focus,
-    .demanda-card textarea:focus {
-        border-color: #007bff;
-        outline: none;
-    }
+  .demanda-card input:focus,
+  .demanda-card select:focus,
+  .demanda-card textarea:focus {
+    border-color: #007bff;
+    outline: none;
+  }
 
-    .demanda-card textarea {
-        resize: vertical;
-    }
+  .demanda-card textarea {
+    resize: vertical;
+  }
 
-    .demanda-actions {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 25px;
-    }
+  .demanda-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+  }
 
-    .demanda-btn {
-        padding: 10px 18px;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
-        font-weight: 500;
-    }
+  .demanda-btn {
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+  }
 
-    .demanda-btn-primary {
-        background-color: #007bff;
-        color: white;
-    }
+  .demanda-btn-primary {
+    background-color: #007bff;
+    color: white;
+  }
 
-    .demanda-btn-primary:hover {
-        background-color: #0056b3;
-    }
+  .demanda-btn-primary:hover {
+    background-color: #0056b3;
+  }
 
-    .demanda-btn-secondary {
-        background-color: #e0e0e0;
-        color: #333;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-    }
+  .demanda-btn-secondary {
+    background-color: #e0e0e0;
+    color: #333;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
 
-    .demanda-btn-secondary:hover {
-        background-color: #c7c7c7;
-    }
+  .demanda-btn-secondary:hover {
+    background-color: #c7c7c7;
+  }
 
-    .demanda-readonly {
-        background-color: #f5f5f5;
-    }
+  .demanda-readonly {
+    background-color: #f5f5f5;
+  }
 
-    .demanda-help {
-        display: block;
-        margin-top: 6px;
-        color: #666;
-        font-size: 12px;
-    }
+  .demanda-help {
+    display: block;
+    margin-top: 6px;
+    color: #666;
+    font-size: 12px;
+  }
 
-    .usuario-search-wrapper {
-        position: relative;
-    }
+  .usuario-search-wrapper {
+    position: relative;
+  }
 
-    .usuario-search-results {
-        margin-top: 8px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        background: #fff;
-        max-height: 220px;
-        overflow-y: auto;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
+  .usuario-search-results {
+    margin-top: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 
-    .usuario-search-results[hidden] {
-        display: none;
-    }
+  .usuario-search-results[hidden] {
+    display: none;
+  }
 
-    .usuario-search-option {
-        width: 100%;
-        padding: 10px 12px;
-        border: 0;
-        border-bottom: 1px solid #eee;
-        background: #fff;
-        text-align: left;
-        cursor: pointer;
-        font-size: 14px;
-    }
+  .usuario-search-option {
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid #eee;
+    background: #fff !important;
+    color: #333 !important;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+  }
 
-    .usuario-search-option:last-child {
-        border-bottom: 0;
-    }
+  .usuario-search-option:last-child {
+    border-bottom: 0;
+  }
 
-    .usuario-search-option:hover {
-        background: #f3f8ff;
-    }
+  .usuario-search-option:hover {
+    background: #f3f8ff !important;
+  }
 
-    .usuario-search-empty {
-        padding: 10px 12px;
-        color: #666;
-        font-size: 13px;
-    }
+  .usuario-search-empty {
+    padding: 10px 12px;
+    color: #666;
+    font-size: 13px;
+  }
 </style>
 
 <div class="demanda-form-wrapper">
-    <div class="demanda-card">
-        <h2>Nova Demanda</h2>
+  <div class="demanda-card">
+    <h2>Nova Demanda</h2>
 
-        <form method="POST" action="/nova_demanda">
+    <form method="POST" action="/nova_demanda">
+      <div class="demanda-form-group">
+        <label for="titulo">Título</label>
+        <input type="text" id="titulo" name="titulo" required />
+      </div>
 
-            <div class="demanda-form-group">
-                <label for="titulo">Título</label>
-                <input type="text" id="titulo" name="titulo" required>
+      <div class="demanda-form-group">
+        <label for="prioridade">Prioridade</label>
+        <select id="prioridade" name="prioridade_id" required>
+          <option value="">Selecione uma prioridade</option>
+          {% for prioridade in prioridades %}
+          <option value="{{ prioridade['id'] }}">
+            Nível {{ prioridade['nivel'] }} - {{ prioridade['nome'] }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="demanda-form-group">
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" name="descricao" rows="5"></textarea>
+      </div>
+
+      <div class="demanda-form-group">
+        <label>Solicitante</label>
+        {% if is_admin %}
+        <div class="usuario-search-wrapper" data-usuario-search>
+          <input type="hidden" name="usuario_id" id="usuario_id" />
+          <input
+            type="text"
+            id="solicitante_busca"
+            placeholder="Digite para buscar um usuário"
+            autocomplete="off"
+            required
+          />
+          <div class="usuario-search-results" id="usuarios-list" hidden>
+            {% for usuario in usuarios %}
+            <button
+              type="button"
+              class="usuario-search-option"
+              data-id="{{ usuario['id'] }}"
+              data-label="{{ usuario['nome'] }}{% if usuario['email'] %} - {{ usuario['email'] }}{% endif %}"
+            >
+              {{ usuario['nome'] }}{% if usuario['email'] %} - {{
+              usuario['email'] }}{% endif %}
+            </button>
+            {% endfor %}
+            <div class="usuario-search-empty" hidden>
+              Nenhum usuário encontrado.
             </div>
+          </div>
+        </div>
+        <small class="demanda-help"
+          >Digite para pesquisar e clique em um usuário existente para
+          selecionar.</small
+        >
+        {% else %}
+        <input
+          type="text"
+          class="demanda-readonly"
+          value="{{ session.get('usuario_nome', '') }}"
+          disabled
+        />
+        {% endif %}
+      </div>
 
-            <div class="demanda-form-group">
-                <label for="prioridade">Prioridade</label>
-                <select id="prioridade" name="prioridade_id" required>
-                    <option value="">Selecione uma prioridade</option>
-                    {% for prioridade in prioridades %}
-                    <option value="{{ prioridade['id'] }}">
-                        Nível {{ prioridade['nivel'] }} - {{ prioridade['nome'] }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="demanda-form-group">
-                <label for="descricao">Descrição</label>
-                <textarea id="descricao" name="descricao" rows="5"></textarea>
-            </div>
-
-            <div class="demanda-form-group">
-                <label>Solicitante</label>
-                {% if is_admin %}
-                <div class="usuario-search-wrapper" data-usuario-search>
-                    <input type="hidden" name="usuario_id" id="usuario_id">
-                    <input
-                        type="text"
-                        id="solicitante_busca"
-                        placeholder="Digite para buscar um usuário"
-                        autocomplete="off"
-                        required>
-                    <div class="usuario-search-results" id="usuarios-list" hidden>
-                        {% for usuario in usuarios %}
-                        <button
-                            type="button"
-                            class="usuario-search-option"
-                            data-id="{{ usuario['id'] }}"
-                            data-label="{{ usuario['nome'] }}{% if usuario['email'] %} - {{ usuario['email'] }}{% endif %}">
-                            {{ usuario['nome'] }}{% if usuario['email'] %} - {{ usuario['email'] }}{% endif %}
-                        </button>
-                        {% endfor %}
-                        <div class="usuario-search-empty" hidden>Nenhum usuário encontrado.</div>
-                    </div>
-                </div>
-                <small class="demanda-help">Digite para pesquisar e clique em um usuário existente para selecionar.</small>
-                {% else %}
-                <input type="text" class="demanda-readonly" value="{{ session.get('usuario_nome', '') }}" disabled>
-                {% endif %}
-            </div>
-
-            <div class="demanda-actions">
-                <a href="/" class="demanda-btn demanda-btn-secondary">Cancelar</a>
-                <button type="submit" class="demanda-btn demanda-btn-primary">Salvar</button>
-            </div>
-
-        </form>
-    </div>
+      <div class="demanda-actions">
+        <a href="/" class="demanda-btn demanda-btn-secondary">Cancelar</a>
+        <button type="submit" class="demanda-btn demanda-btn-primary">
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 {% if is_admin %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const wrapper = document.querySelector('[data-usuario-search]');
-        const input = document.getElementById('solicitante_busca');
-        const hidden = document.getElementById('usuario_id');
-        const results = document.getElementById('usuarios-list');
-        const options = Array.from(document.querySelectorAll('.usuario-search-option'));
-        const emptyState = document.querySelector('.usuario-search-empty');
+  document.addEventListener("DOMContentLoaded", function () {
+    const wrapper = document.querySelector("[data-usuario-search]");
+    const input = document.getElementById("solicitante_busca");
+    const hidden = document.getElementById("usuario_id");
+    const results = document.getElementById("usuarios-list");
+    const options = Array.from(
+      document.querySelectorAll(".usuario-search-option"),
+    );
+    const emptyState = document.querySelector(".usuario-search-empty");
 
-        if (!wrapper || !input || !hidden || !results) {
-            return;
+    if (!wrapper || !input || !hidden || !results) {
+      return;
+    }
+
+    function normalize(value) {
+      return (value || "").toLowerCase().trim();
+    }
+
+    function renderOptions() {
+      const term = normalize(input.value);
+      let visibleCount = 0;
+
+      options.forEach(function (option) {
+        const matches = !term || normalize(option.dataset.label).includes(term);
+        option.hidden = !matches;
+        if (matches) {
+          visibleCount += 1;
         }
+      });
 
-        function normalize(value) {
-            return (value || '').toLowerCase().trim();
-        }
+      emptyState.hidden = visibleCount !== 0;
+      results.hidden = false;
+    }
 
-        function renderOptions() {
-            const term = normalize(input.value);
-            let visibleCount = 0;
+    function syncSelectedUser() {
+      const match = options.find(
+        (option) => option.dataset.label === input.value,
+      );
+      hidden.value = match ? match.dataset.id : "";
+      input.setCustomValidity(
+        match ? "" : "Selecione um usuário existente na lista.",
+      );
+    }
 
-            options.forEach(function (option) {
-                const matches = !term || normalize(option.dataset.label).includes(term);
-                option.hidden = !matches;
-                if (matches) {
-                    visibleCount += 1;
-                }
-            });
-
-            emptyState.hidden = visibleCount !== 0;
-            results.hidden = false;
-        }
-
-        function syncSelectedUser() {
-            const match = options.find((option) => option.dataset.label === input.value);
-            hidden.value = match ? match.dataset.id : '';
-            input.setCustomValidity(match ? '' : 'Selecione um usuário existente na lista.');
-        }
-
-        options.forEach(function (option) {
-            option.addEventListener('click', function () {
-                input.value = option.dataset.label;
-                hidden.value = option.dataset.id;
-                input.setCustomValidity('');
-                results.hidden = true;
-            });
-        });
-
-        input.addEventListener('focus', renderOptions);
-        input.addEventListener('input', function () {
-            hidden.value = '';
-            renderOptions();
-            syncSelectedUser();
-        });
-        input.addEventListener('change', syncSelectedUser);
-        input.form.addEventListener('submit', syncSelectedUser);
-
-        document.addEventListener('click', function (event) {
-            if (!wrapper.contains(event.target)) {
-                results.hidden = true;
-            }
-        });
+    options.forEach(function (option) {
+      option.addEventListener("click", function () {
+        input.value = option.dataset.label;
+        hidden.value = option.dataset.id;
+        input.setCustomValidity("");
+        results.hidden = true;
+      });
     });
-</script>
-{% endif %}
 
-{% endblock %}
+    input.addEventListener("focus", renderOptions);
+    input.addEventListener("input", function () {
+      hidden.value = "";
+      renderOptions();
+      syncSelectedUser();
+    });
+    input.addEventListener("change", syncSelectedUser);
+    input.form.addEventListener("submit", syncSelectedUser);
+
+    document.addEventListener("click", function (event) {
+      if (!wrapper.contains(event.target)) {
+        results.hidden = true;
+      }
+    });
+  });
+</script>
+{% endif %} {% endblock %}
