@@ -53,6 +53,12 @@ def get_prioridade_baixa_id(cursor):
     return prioridade[0]
 
 
+def carregar_usuarios(conn):
+    return conn.execute(
+        'SELECT id, nome, email, tipo FROM usuarios ORDER BY nome'
+    ).fetchall()
+
+
 def ensure_database():
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
@@ -292,16 +298,18 @@ def logout():
 def index():
     conn = get_db()
     prioridades = carregar_prioridades(conn)
+    usuarios = carregar_usuarios(conn)
 
     prioridade_id = request.args.get('prioridade_id', '').strip()
+    solicitante_id = request.args.get('solicitante_id', '').strip()
     ordem = request.args.get('ordem', 'prioridade_maior').strip()
 
     ordens_validas = {
         'prioridade_maior': 'p.nivel ASC, d.data_criacao ASC',
         'prioridade_menor': 'p.nivel DESC, d.data_criacao ASC',
-        'data_desc':        'd.data_criacao DESC',
-        'data_asc':         'd.data_criacao ASC',
-        'titulo':           'd.titulo ASC',
+        'data_desc': 'd.data_criacao DESC',
+        'data_asc': 'd.data_criacao ASC',
+        'titulo': 'd.titulo ASC',
     }
     order_clause = ordens_validas.get(ordem, 'p.nivel ASC, d.data_criacao ASC')
 
@@ -318,6 +326,10 @@ def index():
     if prioridade_id:
         conditions.append('d.prioridade_id = ?')
         params.append(prioridade_id)
+
+    if solicitante_id:
+        conditions.append('d.usuario_id = ?')
+        params.append(solicitante_id)
 
     where_clause = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
 
@@ -337,8 +349,165 @@ def index():
         'index.html',
         demandas=demandas,
         prioridades=prioridades,
+        usuarios=usuarios,
         prioridade_filtro=prioridade_id,
+        solicitante_filtro=solicitante_id,
         ordem=ordem,
+    )
+
+
+@app.route('/relatorios')
+@admin_required
+def relatorios():
+    conn = get_db()
+    usuarios = carregar_usuarios(conn)
+    data_minima = '1900-01-01'
+    data_maxima = datetime.now().strftime('%Y-%m-%d')
+
+    solicitante_id = request.args.get('solicitante_id', '').strip()
+    data_inicial = request.args.get('data_inicial', '').strip()
+    data_final = request.args.get('data_final', '').strip()
+
+    if not solicitante_id and not data_inicial and not data_final:
+        conn.close()
+        return render_template(
+            'relatorios.html',
+            usuarios=usuarios,
+            demandas=[],
+            solicitante_filtro='',
+            data_inicial='',
+            data_final='',
+            data_minima=data_minima,
+            data_maxima=data_maxima,
+            relatorio_pronto=False,
+        )
+
+    if not solicitante_id or not data_inicial or not data_final:
+        flash('Solicitante, data inicial e data final são obrigatórios.')
+        conn.close()
+        return render_template(
+            'relatorios.html',
+            usuarios=usuarios,
+            demandas=[],
+            solicitante_filtro=solicitante_id,
+            data_inicial=data_inicial,
+            data_final=data_final,
+            data_minima=data_minima,
+            data_maxima=data_maxima,
+            relatorio_pronto=False,
+        )
+
+    try:
+        data_inicial_obj = datetime.strptime(data_inicial, '%Y-%m-%d').date()
+        data_final_obj = datetime.strptime(data_final, '%Y-%m-%d').date()
+        data_minima_obj = datetime.strptime(data_minima, '%Y-%m-%d').date()
+        data_maxima_obj = datetime.strptime(data_maxima, '%Y-%m-%d').date()
+    except ValueError:
+        flash('Informe datas válidas no formato correto.')
+        conn.close()
+        return render_template(
+            'relatorios.html',
+            usuarios=usuarios,
+            demandas=[],
+            solicitante_filtro=solicitante_id,
+            data_inicial=data_inicial,
+            data_final=data_final,
+            data_minima=data_minima,
+            data_maxima=data_maxima,
+            relatorio_pronto=False,
+        )
+
+    if data_inicial_obj < data_minima_obj or data_final_obj < data_minima_obj:
+        flash('As datas devem ser a partir de 1900-01-01.')
+        conn.close()
+        return render_template(
+            'relatorios.html',
+            usuarios=usuarios,
+            demandas=[],
+            solicitante_filtro=solicitante_id,
+            data_inicial=data_inicial,
+            data_final=data_final,
+            data_minima=data_minima,
+            data_maxima=data_maxima,
+            relatorio_pronto=False,
+        )
+
+    if data_inicial_obj > data_maxima_obj or data_final_obj > data_maxima_obj:
+        flash('As datas não podem ser maiores que a data atual.')
+        conn.close()
+        return render_template(
+            'relatorios.html',
+            usuarios=usuarios,
+            demandas=[],
+            solicitante_filtro=solicitante_id,
+            data_inicial=data_inicial,
+            data_final=data_final,
+            data_minima=data_minima,
+            data_maxima=data_maxima,
+            relatorio_pronto=False,
+        )
+
+    if data_inicial_obj > data_final_obj:
+        flash('A data inicial não pode ser maior que a data final.')
+        conn.close()
+        return render_template(
+            'relatorios.html',
+            usuarios=usuarios,
+            demandas=[],
+            solicitante_filtro=solicitante_id,
+            data_inicial=data_inicial,
+            data_final=data_final,
+            data_minima=data_minima,
+            data_maxima=data_maxima,
+            relatorio_pronto=False,
+        )
+
+    conditions = []
+    params = []
+
+    if solicitante_id:
+        conditions.append('d.usuario_id = ?')
+        params.append(solicitante_id)
+
+    if data_inicial:
+        conditions.append('date(d.data_criacao) >= date(?)')
+        params.append(data_inicial)
+
+    if data_final:
+        conditions.append('date(d.data_criacao) <= date(?)')
+        params.append(data_final)
+
+    where_clause = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
+
+    demandas = conn.execute(
+        f'''
+        SELECT
+            d.*,
+            p.nome AS prioridade_nome,
+            p.cor AS prioridade_cor,
+            p.nivel AS prioridade_nivel,
+            u.nome AS usuario_nome,
+            u.email AS usuario_email
+        FROM demandas d
+        JOIN prioridades p ON p.id = d.prioridade_id
+        LEFT JOIN usuarios u ON u.id = d.usuario_id
+        {where_clause}
+        ORDER BY d.data_criacao DESC, p.nivel ASC
+        ''',
+        params,
+    ).fetchall()
+
+    conn.close()
+    return render_template(
+        'relatorios.html',
+        usuarios=usuarios,
+        demandas=demandas,
+        solicitante_filtro=solicitante_id,
+        data_inicial=data_inicial,
+        data_final=data_final,
+        data_minima=data_minima,
+        data_maxima=data_maxima,
+        relatorio_pronto=True,
     )
 
 
@@ -348,6 +517,7 @@ def nova_demanda():
     conn = get_db()
     prioridades = carregar_prioridades(conn)
     is_admin = session.get('usuario_tipo') == 'admin'
+    usuarios = carregar_usuarios(conn) if is_admin else []
 
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
@@ -355,8 +525,26 @@ def nova_demanda():
         prioridade_id = request.form.get('prioridade_id', '').strip()
 
         if is_admin:
-            solicitante = request.form.get('solicitante', '').strip()
-            usuario_id_demanda = None
+            usuario_id_demanda = request.form.get('usuario_id', '').strip()
+            usuario = None
+            if usuario_id_demanda:
+                usuario = conn.execute(
+                    'SELECT id, nome FROM usuarios WHERE id = ?',
+                    (usuario_id_demanda,),
+                ).fetchone()
+
+            if not usuario:
+                flash('Solicitante é obrigatório.')
+                conn.close()
+                return render_template(
+                    'nova_demanda.html',
+                    prioridades=prioridades,
+                    is_admin=is_admin,
+                    usuarios=usuarios,
+                )
+
+            solicitante = usuario['nome']
+            usuario_id_demanda = usuario['id']
         else:
             solicitante = session.get('usuario_nome', '')
             usuario_id_demanda = session.get('usuario_id')
@@ -364,12 +552,22 @@ def nova_demanda():
         if not titulo:
             flash('Título é obrigatório.')
             conn.close()
-            return render_template('nova_demanda.html', prioridades=prioridades, is_admin=is_admin)
+            return render_template(
+                'nova_demanda.html',
+                prioridades=prioridades,
+                is_admin=is_admin,
+                usuarios=usuarios,
+            )
 
         if not prioridade_id:
             flash('Prioridade é obrigatória.')
             conn.close()
-            return render_template('nova_demanda.html', prioridades=prioridades, is_admin=is_admin)
+            return render_template(
+                'nova_demanda.html',
+                prioridades=prioridades,
+                is_admin=is_admin,
+                usuarios=usuarios,
+            )
 
         conn.execute(
             '''
@@ -385,7 +583,12 @@ def nova_demanda():
         return redirect(url_for('index'))
 
     conn.close()
-    return render_template('nova_demanda.html', prioridades=prioridades, is_admin=is_admin)
+    return render_template(
+        'nova_demanda.html',
+        prioridades=prioridades,
+        is_admin=is_admin,
+        usuarios=usuarios,
+    )
 
 
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
@@ -406,30 +609,68 @@ def editar(id):
         return redirect(url_for('index'))
 
     prioridades = carregar_prioridades(conn)
+    usuarios = carregar_usuarios(conn) if is_admin else []
 
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
         descricao = request.form.get('descricao', '').strip()
         prioridade_id = request.form.get('prioridade_id', '').strip()
-        solicitante = request.form.get('solicitante', '').strip() if is_admin else demanda['solicitante']
+
+        if is_admin:
+            usuario_id_demanda = request.form.get('usuario_id', '').strip()
+            usuario = None
+            if usuario_id_demanda:
+                usuario = conn.execute(
+                    'SELECT id, nome FROM usuarios WHERE id = ?',
+                    (usuario_id_demanda,),
+                ).fetchone()
+
+            if not usuario:
+                flash('Solicitante é obrigatório.')
+                conn.close()
+                return render_template(
+                    'editar.html',
+                    demanda=demanda,
+                    prioridades=prioridades,
+                    is_admin=is_admin,
+                    usuarios=usuarios,
+                )
+
+            solicitante = usuario['nome']
+            usuario_id_demanda = usuario['id']
+        else:
+            solicitante = demanda['solicitante']
+            usuario_id_demanda = demanda['usuario_id']
 
         if not titulo:
             flash('Título é obrigatório.')
             conn.close()
-            return render_template('editar.html', demanda=demanda, prioridades=prioridades, is_admin=is_admin)
+            return render_template(
+                'editar.html',
+                demanda=demanda,
+                prioridades=prioridades,
+                is_admin=is_admin,
+                usuarios=usuarios,
+            )
 
         if not prioridade_id:
             flash('Prioridade é obrigatória.')
             conn.close()
-            return render_template('editar.html', demanda=demanda, prioridades=prioridades, is_admin=is_admin)
+            return render_template(
+                'editar.html',
+                demanda=demanda,
+                prioridades=prioridades,
+                is_admin=is_admin,
+                usuarios=usuarios,
+            )
 
         conn.execute(
             '''
             UPDATE demandas
-            SET titulo = ?, descricao = ?, solicitante = ?, prioridade_id = ?
+            SET titulo = ?, descricao = ?, solicitante = ?, prioridade_id = ?, usuario_id = ?
             WHERE id = ?
             ''',
-            (titulo, descricao, solicitante, prioridade_id, id),
+            (titulo, descricao, solicitante, prioridade_id, usuario_id_demanda, id),
         )
         conn.commit()
         conn.close()
@@ -437,7 +678,13 @@ def editar(id):
         return redirect(url_for('index'))
 
     conn.close()
-    return render_template('editar.html', demanda=demanda, prioridades=prioridades, is_admin=is_admin)
+    return render_template(
+        'editar.html',
+        demanda=demanda,
+        prioridades=prioridades,
+        is_admin=is_admin,
+        usuarios=usuarios,
+    )
 
 
 @app.route('/deletar/<int:id>')
@@ -680,6 +927,7 @@ def novo_usuario():
         nome = request.form.get('nome', '').strip()
         email = request.form.get('email', '').strip().lower()
         senha = request.form.get('senha', '')
+        tipo = request.form.get('tipo', 'solicitante').strip()
 
         if not nome or not email or not senha:
             flash('Nome, email e senha são obrigatórios.')
@@ -693,7 +941,7 @@ def novo_usuario():
                     nome,
                     email,
                     generate_password_hash(senha),
-                    'solicitante',
+                    tipo if tipo in ('admin', 'solicitante') else 'solicitante',
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 ),
             )
@@ -706,6 +954,116 @@ def novo_usuario():
             conn.close()
 
     return render_template('novo_usuario.html')
+
+
+@app.route('/usuarios/editar/<int:id>', methods=['GET', 'POST'])
+@admin_required
+def editar_usuario(id):
+    conn = get_db()
+    usuario = conn.execute(
+        'SELECT id, nome, email, tipo, data_criacao FROM usuarios WHERE id = ?',
+        (id,),
+    ).fetchone()
+
+    if not usuario:
+        conn.close()
+        flash('Usuário não encontrado.')
+        return redirect(url_for('usuarios'))
+
+    if request.method == 'POST':
+        nome = request.form.get('nome', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        senha = request.form.get('senha', '')
+        tipo = request.form.get('tipo', 'solicitante').strip()
+
+        if not nome or not email:
+            conn.close()
+            flash('Nome e email são obrigatórios.')
+            return render_template('editar_usuario.html', usuario=usuario)
+
+        if tipo not in ('admin', 'solicitante'):
+            tipo = 'solicitante'
+
+        try:
+            if senha:
+                conn.execute(
+                    'UPDATE usuarios SET nome = ?, email = ?, senha_hash = ?, tipo = ? WHERE id = ?',
+                    (nome, email, generate_password_hash(senha), tipo, id),
+                )
+            else:
+                conn.execute(
+                    'UPDATE usuarios SET nome = ?, email = ?, tipo = ? WHERE id = ?',
+                    (nome, email, tipo, id),
+                )
+
+            conn.commit()
+
+            if session.get('usuario_id') == id:
+                session['usuario_nome'] = nome
+                session['usuario_tipo'] = tipo
+
+            conn.close()
+            flash('Usuário atualizado com sucesso!')
+            return redirect(url_for('usuarios'))
+        except sqlite3.IntegrityError:
+            conn.close()
+            flash('Este email já está cadastrado.')
+            usuario_data = {
+                'id': id,
+                'nome': nome,
+                'email': email,
+                'tipo': tipo,
+                'data_criacao': usuario['data_criacao'],
+            }
+            return render_template('editar_usuario.html', usuario=usuario_data)
+
+    conn.close()
+    return render_template('editar_usuario.html', usuario=usuario)
+
+
+@app.route('/usuarios/excluir/<int:id>', methods=['POST'])
+@admin_required
+def excluir_usuario(id):
+    conn = get_db()
+    usuario = conn.execute(
+        'SELECT id, nome, tipo FROM usuarios WHERE id = ?',
+        (id,),
+    ).fetchone()
+
+    if not usuario:
+        conn.close()
+        flash('Usuário não encontrado.')
+        return redirect(url_for('usuarios'))
+
+    if session.get('usuario_id') == id:
+        conn.close()
+        flash('Não é possível excluir o próprio usuário logado.')
+        return redirect(url_for('usuarios'))
+
+    demandas_vinculadas = conn.execute(
+        'SELECT COUNT(*) FROM demandas WHERE usuario_id = ?',
+        (id,),
+    ).fetchone()[0]
+
+    if demandas_vinculadas > 0:
+        conn.close()
+        flash('Não é possível excluir um usuário vinculado a demandas.')
+        return redirect(url_for('usuarios'))
+
+    total_admins = conn.execute(
+        "SELECT COUNT(*) FROM usuarios WHERE tipo = 'admin'"
+    ).fetchone()[0]
+
+    if usuario['tipo'] == 'admin' and total_admins <= 1:
+        conn.close()
+        flash('É necessário manter pelo menos um usuário administrador.')
+        return redirect(url_for('usuarios'))
+
+    conn.execute('DELETE FROM usuarios WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    flash('Usuário excluído com sucesso!')
+    return redirect(url_for('usuarios'))
 
 
 def calcular_prazo(data_inicio):

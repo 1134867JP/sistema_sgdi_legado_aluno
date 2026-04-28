@@ -1,0 +1,818 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    .relatorio-wrapper {
+        max-width: 1100px;
+        margin: 30px auto;
+    }
+
+    .relatorio-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        padding: 24px 28px;
+        margin-bottom: 20px;
+    }
+
+    .relatorio-card h2,
+    .relatorio-card h3 {
+        margin-top: 0;
+        color: #1f2937;
+    }
+
+    .relatorio-filtros {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        align-items: start;
+    }
+
+    .relatorio-campo label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .relatorio-campo input,
+    .relatorio-campo select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background: #fff;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .relatorio-campo input:focus,
+    .relatorio-campo select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .relatorio-help {
+        display: block;
+        margin-top: 6px;
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    .relatorio-acoes {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .relatorio-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .relatorio-btn-primary {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    .relatorio-btn-secondary {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
+    .relatorio-resumo {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        color: #4b5563;
+    }
+
+    .relatorio-tabela {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .relatorio-tabela th,
+    .relatorio-tabela td {
+        padding: 12px 10px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: top;
+        font-size: 14px;
+    }
+
+    .relatorio-tabela th {
+        text-transform: uppercase;
+        font-size: 12px;
+        color: #6b7280;
+        background: #f9fafb;
+    }
+
+    .prioridade-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .relatorio-vazio {
+        padding: 24px;
+        text-align: center;
+        color: #6b7280;
+    }
+
+    .date-field {
+        position: relative;
+    }
+
+    .date-input-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .date-input-row input {
+        flex: 1;
+        max-width: 200px;
+    }
+
+    .calendar-toggle {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 22px;
+        line-height: 1;
+        padding: 0;
+        color: #2563eb;
+        flex: 0 0 auto;
+    }
+
+    .calendar-popover {
+        position: fixed;
+        background: #fff;
+        border: 1px solid #dbe3ee;
+        border-radius: 12px;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+        padding: 10px;
+        z-index: 20;
+        width: min(270px, calc(100vw - 32px));
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .calendar-popover[hidden] {
+        display: none;
+    }
+
+    .calendar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .calendar-nav {
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .calendar-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 700;
+        color: #1f2937;
+        font-size: 14px;
+    }
+
+    .calendar-title input {
+        width: 60px;
+        padding: 4px 6px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        text-align: center;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    .calendar-grid,
+    .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+    }
+
+    .calendar-weekdays {
+        margin-bottom: 4px;
+        color: #6b7280;
+        font-size: 10px;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .calendar-day {
+        height: 32px;
+        border: none;
+        border-radius: 8px;
+        background: #f8fafc;
+        cursor: pointer;
+        font-size: 12px;
+        color: #1f2937;
+    }
+
+    .calendar-day:hover {
+        background: #dbeafe;
+    }
+
+    .calendar-day.is-muted {
+        color: #9ca3af;
+    }
+
+    .calendar-day.is-selected {
+        background: #2563eb;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .calendar-day.is-today {
+        outline: 2px solid #93c5fd;
+    }
+
+    .calendar-day.is-disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        background: #f3f4f6;
+    }
+
+    @media print {
+        .header,
+        .alert,
+        .relatorio-card:first-child,
+        .relatorio-btn-secondary,
+        .relatorio-btn-primary,
+        .calendar-popover {
+            display: none !important;
+        }
+
+        body,
+        .container,
+        .relatorio-wrapper {
+            margin: 0;
+            padding: 0;
+            max-width: 100%;
+            background: #fff;
+        }
+
+        .relatorio-card {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+    }
+</style>
+
+<div class="relatorio-wrapper">
+    <div class="relatorio-card">
+        <h2>Relatórios de Demandas</h2>
+
+        <form method="GET" action="/relatorios" class="relatorio-filtros" novalidate>
+            <div class="relatorio-campo">
+                <label for="solicitante_id">Solicitante</label>
+                <select id="solicitante_id" name="solicitante_id" required>
+                    <option value="">Selecione um solicitante</option>
+                    {% for usuario in usuarios %}
+                    <option value="{{ usuario['id'] }}" {% if solicitante_filtro == usuario['id']|string %}selected{% endif %}>
+                        {{ usuario['nome'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="relatorio-campo date-field" data-date-picker>
+                <label for="data_inicial">Data inicial</label>
+                <div class="date-input-row">
+                    <input
+                        type="text"
+                        id="data_inicial"
+                        name="data_inicial"
+                        value="{{ data_inicial }}"
+                        placeholder="DD/MM/AAAA"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        data-min="{{ data_minima }}"
+                        data-max="{{ data_maxima }}"
+                        maxlength="10"
+                        required>
+                    <button type="button" class="calendar-toggle" data-open-calendar aria-label="Abrir calendário">📅</button>
+                </div>
+                <small class="relatorio-help">Digite no formato DD/MM/AAAA ou escolha no calendário.</small>
+                <div class="calendar-popover" data-calendar hidden>
+                    <div class="calendar-header">
+                        <button type="button" class="calendar-nav" data-prev-month>&lsaquo;</button>
+                        <div class="calendar-title">
+                            <span data-month-label></span>
+                            <input type="text" value="2026" inputmode="numeric" maxlength="4" data-year-input>
+                        </div>
+                        <button type="button" class="calendar-nav" data-next-month>&rsaquo;</button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <span>Dom</span>
+                        <span>Seg</span>
+                        <span>Ter</span>
+                        <span>Qua</span>
+                        <span>Qui</span>
+                        <span>Sex</span>
+                        <span>Sáb</span>
+                    </div>
+                    <div class="calendar-grid" data-calendar-grid></div>
+                </div>
+            </div>
+
+            <div class="relatorio-campo date-field" data-date-picker>
+                <label for="data_final">Data final</label>
+                <div class="date-input-row">
+                    <input
+                        type="text"
+                        id="data_final"
+                        name="data_final"
+                        value="{{ data_final }}"
+                        placeholder="DD/MM/AAAA"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        data-min="{{ data_minima }}"
+                        data-max="{{ data_maxima }}"
+                        maxlength="10"
+                        required>
+                    <button type="button" class="calendar-toggle" data-open-calendar aria-label="Abrir calendário">📅</button>
+                </div>
+                <small class="relatorio-help">Digite no formato DD/MM/AAAA ou escolha no calendário.</small>
+                <div class="calendar-popover" data-calendar hidden>
+                    <div class="calendar-header">
+                        <button type="button" class="calendar-nav" data-prev-month>&lsaquo;</button>
+                        <div class="calendar-title">
+                            <span data-month-label></span>
+                            <input type="text" value="2026" inputmode="numeric" maxlength="4" data-year-input>
+                        </div>
+                        <button type="button" class="calendar-nav" data-next-month>&rsaquo;</button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <span>Dom</span>
+                        <span>Seg</span>
+                        <span>Ter</span>
+                        <span>Qua</span>
+                        <span>Qui</span>
+                        <span>Sex</span>
+                        <span>Sáb</span>
+                    </div>
+                    <div class="calendar-grid" data-calendar-grid></div>
+                </div>
+            </div>
+
+            <div class="relatorio-acoes">
+                <button type="submit" class="relatorio-btn relatorio-btn-primary">Emitir relatório</button>
+                <a href="/relatorios" class="relatorio-btn relatorio-btn-secondary">Limpar</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="relatorio-card" id="relatorio-resultado">
+        <div class="relatorio-resumo">
+            <h3>Resultado</h3>
+            <strong>{{ demandas|length }} demanda(s) encontrada(s)</strong>
+        </div>
+
+        {% if relatorio_pronto %}
+        <div class="relatorio-acoes" style="margin-bottom: 16px;">
+            <button type="button" class="relatorio-btn relatorio-btn-secondary" onclick="window.print()">
+                Gerar PDF
+            </button>
+        </div>
+        {% endif %}
+
+        {% if demandas %}
+        <table class="relatorio-tabela">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Solicitante</th>
+                    <th>Prioridade</th>
+                    <th>Data de criação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for demanda in demandas %}
+                <tr>
+                    <td>{{ demanda['id'] }}</td>
+                    <td>{{ demanda['titulo'] }}</td>
+                    <td>{{ demanda['solicitante'] }}</td>
+                    <td>
+                        <span class="prioridade-tag" data-priority-color="{{ demanda['prioridade_cor'] }}">
+                            {{ demanda['prioridade_nome'] }}
+                        </span>
+                    </td>
+                    <td>{{ demanda['data_criacao'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% elif relatorio_pronto %}
+        <div class="relatorio-vazio">
+            Nenhuma demanda encontrada para os filtros informados.
+        </div>
+        {% else %}
+        <div class="relatorio-vazio">
+            Preencha todos os filtros obrigatórios para emitir o relatório.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form[action="/relatorios"]');
+        const dataInicial = document.getElementById('data_inicial');
+        const dataFinal = document.getElementById('data_final');
+
+        if (!form || !dataInicial || !dataFinal) {
+            return;
+        }
+
+        const monthNames = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+
+        function parseDateString(value) {
+            // Aceita DD/MM/AAAA ou AAAA-MM-DD para compatibilidade
+            let match;
+            
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+                // Formato DD/MM/AAAA
+                match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                const day = Number(match[1]);
+                const month = Number(match[2]);
+                const year = Number(match[3]);
+                const date = new Date(year, month - 1, day);
+
+                if (
+                    Number.isNaN(year) ||
+                    year < 1900 ||
+                    month < 1 ||
+                    month > 12 ||
+                    day < 1 ||
+                    day > 31 ||
+                    date.getFullYear() !== year ||
+                    date.getMonth() !== month - 1 ||
+                    date.getDate() !== day
+                ) {
+                    return null;
+                }
+
+                return date;
+            } else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                // Formato AAAA-MM-DD (compatibilidade)
+                const year = Number(value.slice(0, 4));
+                const month = Number(value.slice(5, 7));
+                const day = Number(value.slice(8, 10));
+                const date = new Date(year, month - 1, day);
+
+                if (
+                    Number.isNaN(year) ||
+                    year < 1900 ||
+                    month < 1 ||
+                    month > 12 ||
+                    day < 1 ||
+                    day > 31 ||
+                    date.getFullYear() !== year ||
+                    date.getMonth() !== month - 1 ||
+                    date.getDate() !== day
+                ) {
+                    return null;
+                }
+
+                return date;
+            }
+            
+            return null;
+        }
+
+        function formatDate(date, format = 'display') {
+            const year = String(date.getFullYear()).padStart(4, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            
+            if (format === 'iso') {
+                // Para enviar ao backend em AAAA-MM-DD
+                return year + '-' + month + '-' + day;
+            } else {
+                // Para exibir em DD/MM/AAAA
+                return day + '/' + month + '/' + year;
+            }
+        }
+
+        function applyDateMask(input) {
+            input.addEventListener('input', function() {
+                let value = input.value.replace(/\D/g, '');
+                
+                if (value.length >= 2) {
+                    value = value.slice(0, 2) + '/' + value.slice(2);
+                }
+                if (value.length >= 5) {
+                    value = value.slice(0, 5) + '/' + value.slice(5);
+                }
+                
+                input.value = value.slice(0, 10);
+            });
+        }
+
+        function aplicarEstadoVisual(input) {
+            input.style.borderColor = input.validationMessage ? '#dc2626' : '#d1d5db';
+        }
+
+        function validarCampoData(input) {
+            const value = input.value.trim();
+            const min = input.dataset.min;
+            const max = input.dataset.max;
+
+            if (!value) {
+                input.setCustomValidity('Preencha este campo.');
+                return false;
+            }
+
+            if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+                input.setCustomValidity('Use o formato DD/MM/AAAA.');
+                return false;
+            }
+
+            const date = parseDateString(value);
+            if (!date) {
+                const yearMatch = value.match(/\/(\d{4})$/);
+                const typedYear = yearMatch ? Number(yearMatch[1]) : null;
+                if (typedYear !== null && typedYear < 1900) {
+                    input.setCustomValidity('O ano deve ser igual ou maior que 1900.');
+                } else {
+                    input.setCustomValidity('Informe uma data válida no formato DD/MM/AAAA.');
+                }
+                return false;
+            }
+
+            const normalized = formatDate(date, 'iso');
+            if (normalized < min) {
+                input.setCustomValidity('A data deve ser a partir de ' + min + '.');
+                return false;
+            }
+
+            if (normalized > max) {
+                input.setCustomValidity('A data não pode ser maior que hoje.');
+                return false;
+            }
+
+            input.setCustomValidity('');
+            return true;
+        }
+
+        function validarPeriodo() {
+            const inicialValida = validarCampoData(dataInicial);
+            const finalValida = validarCampoData(dataFinal);
+
+            if (!inicialValida || !finalValida) {
+                aplicarEstadoVisual(dataInicial);
+                aplicarEstadoVisual(dataFinal);
+                return false;
+            }
+
+            const dataInicialISO = formatDate(parseDateString(dataInicial.value), 'iso');
+            const dataFinalISO = formatDate(parseDateString(dataFinal.value), 'iso');
+
+            if (dataInicialISO > dataFinalISO) {
+                dataFinal.setCustomValidity('A data final deve ser maior ou igual à data inicial.');
+                aplicarEstadoVisual(dataFinal);
+                return false;
+            }
+
+            dataFinal.setCustomValidity('');
+            aplicarEstadoVisual(dataInicial);
+            aplicarEstadoVisual(dataFinal);
+            return true;
+        }
+
+        [dataInicial, dataFinal].forEach(function (input) {
+            applyDateMask(input);
+            
+            input.addEventListener('input', function () {
+                validarPeriodo();
+            });
+
+            input.addEventListener('blur', function () {
+                validarPeriodo();
+                if (input.validationMessage) {
+                    input.reportValidity();
+                }
+            });
+        });
+
+        form.addEventListener('submit', function (event) {
+            if (!validarPeriodo()) {
+                event.preventDefault();
+                form.reportValidity();
+            } else {
+                // Converter datas para formato ISO para enviar ao backend
+                const dataInicialObj = parseDateString(dataInicial.value);
+                const dataFinalObj = parseDateString(dataFinal.value);
+                
+                if (dataInicialObj) {
+                    dataInicial.value = formatDate(dataInicialObj, 'iso');
+                }
+                if (dataFinalObj) {
+                    dataFinal.value = formatDate(dataFinalObj, 'iso');
+                }
+            }
+        });
+
+        function setupDatePicker(wrapper) {
+            const input = wrapper.querySelector('input[type="text"]');
+            const toggle = wrapper.querySelector('[data-open-calendar]');
+            const calendar = wrapper.querySelector('[data-calendar]');
+            const grid = wrapper.querySelector('[data-calendar-grid]');
+            const monthLabel = wrapper.querySelector('[data-month-label]');
+            const yearInput = wrapper.querySelector('[data-year-input]');
+            const prevButton = wrapper.querySelector('[data-prev-month]');
+            const nextButton = wrapper.querySelector('[data-next-month]');
+
+            const maxDate = parseDateString(input.dataset.max) || new Date();
+            const selectedDate = parseDateString(input.value) || maxDate;
+
+            let viewYear = selectedDate.getFullYear();
+            let viewMonth = selectedDate.getMonth();
+
+            function sameDay(a, b) {
+                return a && b &&
+                    a.getFullYear() === b.getFullYear() &&
+                    a.getMonth() === b.getMonth() &&
+                    a.getDate() === b.getDate();
+            }
+
+            function isDisabled(date) {
+                const normalized = formatDate(date, 'iso');
+                return normalized < input.dataset.min ||
+                    normalized > input.dataset.max;
+            }
+
+            function renderCalendar() {
+                monthLabel.textContent = monthNames[viewMonth];
+                yearInput.value = String(viewYear);
+                grid.innerHTML = '';
+
+                const firstDay = new Date(viewYear, viewMonth, 1);
+                const startDay = firstDay.getDay();
+                const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+                const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
+                const today = new Date();
+                const selected = parseDateString(input.value);
+
+                for (let i = 0; i < 42; i += 1) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'calendar-day';
+
+                    let date;
+                    let label;
+
+                    if (i < startDay) {
+                        label = prevMonthDays - startDay + i + 1;
+                        date = new Date(viewYear, viewMonth - 1, label);
+                        button.classList.add('is-muted');
+                    } else if (i >= startDay + daysInMonth) {
+                        label = i - (startDay + daysInMonth) + 1;
+                        date = new Date(viewYear, viewMonth + 1, label);
+                        button.classList.add('is-muted');
+                    } else {
+                        label = i - startDay + 1;
+                        date = new Date(viewYear, viewMonth, label);
+                    }
+
+                    button.textContent = String(label);
+
+                    if (sameDay(date, selected)) {
+                        button.classList.add('is-selected');
+                    }
+
+                    if (sameDay(date, today)) {
+                        button.classList.add('is-today');
+                    }
+
+                    if (isDisabled(date)) {
+                        button.classList.add('is-disabled');
+                        button.disabled = true;
+                    } else {
+                        button.addEventListener('click', function () {
+                            input.value = formatDate(date, 'display');
+                            input.setCustomValidity('');
+                            validarPeriodo();
+                            calendar.hidden = true;
+                        });
+                    }
+
+                    grid.appendChild(button);
+                }
+            }
+
+            function openCalendar() {
+                const parsed = parseDateString(input.value);
+                if (parsed) {
+                    viewYear = parsed.getFullYear();
+                    viewMonth = parsed.getMonth();
+                }
+                renderCalendar();
+                calendar.hidden = false;
+                
+                // Posicionar o calendário corretamente
+                const rect = input.getBoundingClientRect();
+                calendar.style.top = (rect.bottom + 10) + 'px';
+                calendar.style.left = Math.max(10, rect.left) + 'px';
+            }
+
+            function closeCalendar() {
+                calendar.hidden = true;
+            }
+
+            toggle.addEventListener('click', function () {
+                if (calendar.hidden) {
+                    openCalendar();
+                } else {
+                    closeCalendar();
+                }
+            });
+
+            prevButton.addEventListener('click', function () {
+                viewMonth -= 1;
+                if (viewMonth < 0) {
+                    viewMonth = 11;
+                    viewYear -= 1;
+                }
+                renderCalendar();
+            });
+
+            nextButton.addEventListener('click', function () {
+                viewMonth += 1;
+                if (viewMonth > 11) {
+                    viewMonth = 0;
+                    viewYear += 1;
+                }
+                renderCalendar();
+            });
+
+            yearInput.addEventListener('input', function () {
+                yearInput.value = yearInput.value.replace(/\D/g, '').slice(0, 4);
+                if (yearInput.value.length === 4) {
+                    const year = Number(yearInput.value);
+                    if (year >= 1900 && year <= 9999) {
+                        viewYear = year;
+                        renderCalendar();
+                    }
+                }
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!wrapper.contains(event.target)) {
+                    closeCalendar();
+                }
+            });
+            
+            window.addEventListener('scroll', function() {
+                if (!calendar.hidden) {
+                    const rect = input.getBoundingClientRect();
+                    calendar.style.top = (rect.bottom + 10) + 'px';
+                    calendar.style.left = Math.max(10, rect.left) + 'px';
+                }
+            }, { passive: true });
+        }
+
+        document.querySelectorAll('[data-date-picker]').forEach(setupDatePicker);
+    });
+</script>
+
+{% endblock %}

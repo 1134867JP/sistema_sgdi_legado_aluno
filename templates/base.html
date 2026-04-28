@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>SGDI - Sistema de Gestão de Demandas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    
+
     <style>
         body {
             margin: 0;
@@ -11,7 +12,6 @@
             background-color: #f4f6f9;
         }
 
-        /* HEADER */
         .header {
             background: #1f2937;
             color: white;
@@ -27,11 +27,11 @@
             font-weight: 600;
         }
 
-        /* MENU */
         .menu {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex-wrap: wrap;
         }
 
         .menu a {
@@ -50,7 +50,6 @@
             font-weight: 500;
         }
 
-        /* SEARCH */
         .menu form {
             display: flex;
             align-items: center;
@@ -78,14 +77,12 @@
             background-color: #2563eb;
         }
 
-        /* USER INFO */
         .usuario-info {
             font-size: 13px;
             color: #d1d5db;
             margin-left: 10px;
         }
 
-        /* ALERT */
         .alert {
             max-width: 900px;
             margin: 15px auto;
@@ -96,7 +93,6 @@
             font-size: 14px;
         }
 
-        /* CONTAINER */
         .container {
             max-width: 1100px;
             margin: 30px auto;
@@ -115,6 +111,7 @@
             <a href="/nova_demanda">Nova Demanda</a>
 
             {% if session.get('usuario_tipo') == 'admin' %}
+            <a href="/relatorios">Relatórios</a>
             <a href="/prioridades">Prioridades</a>
             <a href="/usuarios">Usuários</a>
             {% endif %}

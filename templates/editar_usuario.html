@@ -49,6 +49,13 @@
         outline: none;
     }
 
+    .demanda-help {
+        display: block;
+        margin-top: 6px;
+        color: #666;
+        font-size: 12px;
+    }
+
     .demanda-actions {
         display: flex;
         justify-content: space-between;
@@ -87,37 +94,38 @@
 
 <div class="demanda-form-wrapper">
     <div class="demanda-card">
-        <h2>Novo Usuário</h2>
+        <h2>Editar Usuário</h2>
 
-        <form method="POST" action="/usuarios/novo">
+        <form method="POST" action="/usuarios/editar/{{ usuario['id'] }}">
 
             <div class="demanda-form-group">
                 <label>Nome</label>
-                <input type="text" name="nome" required>
+                <input type="text" name="nome" value="{{ usuario['nome'] }}" required>
             </div>
 
             <div class="demanda-form-group">
                 <label>Email</label>
-                <input type="email" name="email" required>
+                <input type="email" name="email" value="{{ usuario['email'] }}" required>
             </div>
 
             <div class="demanda-form-group">
-                <label>Senha</label>
-                <input type="password" name="senha" required>
+                <label>Nova Senha</label>
+                <input type="password" name="senha">
+                <small class="demanda-help">Deixe em branco para manter a senha atual.</small>
             </div>
 
             <div class="demanda-form-group">
                 <label>Tipo</label>
                 <select name="tipo" required>
-                    <option value="solicitante">Solicitante</option>
-                    <option value="admin">Administrador</option>
+                    <option value="solicitante" {% if usuario['tipo'] == 'solicitante' %}selected{% endif %}>Solicitante</option>
+                    <option value="admin" {% if usuario['tipo'] == 'admin' %}selected{% endif %}>Administrador</option>
                 </select>
             </div>
 
             <div class="demanda-actions">
                 <a href="/usuarios" class="demanda-btn demanda-btn-secondary">Cancelar</a>
                 <button type="submit" class="demanda-btn demanda-btn-primary">
-                    Criar Usuário
+                    Salvar Alterações
                 </button>
             </div>
 

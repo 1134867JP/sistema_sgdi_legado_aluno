@@ -175,13 +175,13 @@
         <div class="filtros-grupo">
             <span class="filtros-label">Prioridade:</span>
 
-            <a href="/?ordem={{ ordem }}"
+            <a href="/?solicitante_id={{ solicitante_filtro }}&ordem={{ ordem }}"
                class="filtro-btn{% if not prioridade_filtro %} filtro-btn-ativo{% endif %}">
                 Todas
             </a>
 
             {% for p in prioridades %}
-            <a href="/?prioridade_id={{ p['id'] }}&ordem={{ ordem }}"
+            <a href="/?prioridade_id={{ p['id'] }}&solicitante_id={{ solicitante_filtro }}&ordem={{ ordem }}"
                class="filtro-btn{% if prioridade_filtro == p['id']|string %} filtro-btn-ativo{% endif %}"
                style="{% if prioridade_filtro == p['id']|string %}background-color: {{ p['cor'] }}; border-color: {{ p['cor'] }}; color: #fff;{% else %}border-color: {{ p['cor'] }}; color: {{ p['cor'] }};{% endif %}">
                 <span class="filtro-dot" style="background-color: {{ p['cor'] }};"></span>
@@ -191,11 +191,34 @@
         </div>
 
         <div class="filtros-grupo">
+            <span class="filtros-label">Solicitante:</span>
+
+            <form method="GET" action="/" style="display:inline;">
+                {% if prioridade_filtro %}
+                <input type="hidden" name="prioridade_id" value="{{ prioridade_filtro }}">
+                {% endif %}
+                <input type="hidden" name="ordem" value="{{ ordem }}">
+
+                <select name="solicitante_id" class="filtro-select" onchange="this.form.submit()">
+                    <option value="">Todos</option>
+                    {% for usuario in usuarios %}
+                    <option value="{{ usuario['id'] }}" {% if solicitante_filtro == usuario['id']|string %}selected{% endif %}>
+                        {{ usuario['nome'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+        <div class="filtros-grupo">
             <span class="filtros-label">Ordenar:</span>
 
             <form method="GET" action="/" style="display:inline;">
                 {% if prioridade_filtro %}
                 <input type="hidden" name="prioridade_id" value="{{ prioridade_filtro }}">
+                {% endif %}
+                {% if solicitante_filtro %}
+                <input type="hidden" name="solicitante_id" value="{{ solicitante_filtro }}">
                 {% endif %}
 
                 <select name="ordem" class="filtro-select" onchange="this.form.submit()">
